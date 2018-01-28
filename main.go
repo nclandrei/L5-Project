@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 )
 
@@ -34,21 +35,27 @@ func main() {
 	projectName := flag.String("project", "Kafka", "defines the name of the project to be queried upon")
 	numberOfIssues := flag.Int("issuesCount", 5000, "defines the number of issues to be retrieved")
 
+	flag.Parse()
+
 	requestBody := &JqlRequestBody{
-		Jql:        fmt.Sprintf("project=%v", projectName),
+		Jql:        fmt.Sprintf("project=%s", *projectName),
 		StartAt:    0,
 		MaxResults: *numberOfIssues,
 		Expand:     []string{"summary", "comments"},
 	}
 
-	if req, err := json.Marshal(requestBody); err == nil {
-		resp, err := http.Post(jiraURL, "application/json", bytes.NewBuffer(req))
-		if err != nil {
-			fmt.Printf("Could not send request: %v", err)
-		} else {
-			fmt.Println("response Status:", resp.Status)
-		}
+	req, _ := json.Marshal(requestBody)
+
+	resp, err := http.Post(jiraURL, "application/json", bytes.NewBuffer(req))
+	if err != nil {
+		fmt.Printf("Could not send request: %v", err)
 	} else {
-		fmt.Printf("Could not marshal request body: %v", err)
+		fmt.Println("response Status:", resp.Status)
+		defer resp.Body.Close()
+		if resp.StatusCode == http.StatusOK {
+			bodyBytes, _ := ioutil.ReadAll(resp.Body)
+			bodyString := string(bodyBytes)
+			fmt.Println(bodyString)
+		}
 	}
 }
