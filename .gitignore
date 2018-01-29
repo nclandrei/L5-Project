@@ -4,6 +4,7 @@
 *.dll
 *.so
 *.dylib
+l5-project
 
 # Test binary, build with `go test -c`
 *.test
