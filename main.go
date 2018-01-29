@@ -36,15 +36,17 @@ type JqlRequestBody struct {
 
 func main() {
 	projectName := flag.String("project", "Kafka", "defines the name of the project to be queried upon")
-	numberOfIssues := flag.Int("issuesCount", 5000, "defines the number of issues to be retrieved")
+	numberOfIssues := flag.Int("issuesCount", 50000, "defines the number of issues to be retrieved")
 
 	flag.Parse()
 
-	responses := make(chan string, *numberOfIssues/500)
-	var respSlice []string
+	responses := make(chan []byte)
+	done := make(chan bool)
+	var respSlice [][]byte
 
-	for i := 0; i < *numberOfIssues/500; i++ {
+	for i := 0; i < *numberOfIssues/100; i++ {
 		go func(j int) {
+			fmt.Println(j)
 			requestBody := &JqlRequestBody{
 				Jql:        fmt.Sprintf("project=%s", *projectName),
 				StartAt:    j * 500,
@@ -61,17 +63,24 @@ func main() {
 				defer resp.Body.Close()
 				if resp.StatusCode == http.StatusOK {
 					bodyBytes, _ := ioutil.ReadAll(resp.Body)
-					bodyString := string(bodyBytes)
-					responses <- bodyString
-					// fmt.Println(bodyString)
+					if bodyJSON, err := json.Marshal(bodyBytes); err != nil {
+						fmt.Printf("Could not marshal response to JSON: %v", err)
+					} else {
+						responses <- bodyJSON
+					}
 				}
 			}
+			done <- true
 		}(i)
 	}
 
-	for i := 0; i < *numberOfIssues/500; i++ {
-		newResponse := <-responses
-		respSlice = append(respSlice, newResponse)
+	for i := 0; i < *numberOfIssues/100; i++ {
+		select {
+		case newResponse := <-responses:
+			respSlice = append(respSlice, newResponse)
+		case <-done:
+			fmt.Println("Worker finished executing")
+		}
 	}
 
 	connStr := "user=nclandrei password=nclandrei dbname=nclandrei sslmode=disable"
