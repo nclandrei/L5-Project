@@ -74,11 +74,14 @@ func main() {
 		}(i)
 	}
 
-	for i := 0; i < *numberOfIssues/100; i++ {
+	doneCounter := 0
+
+	for doneCounter < *numberOfIssues/100 {
 		select {
 		case newResponse := <-responses:
 			respSlice = append(respSlice, newResponse)
 		case <-done:
+			doneCounter++
 			fmt.Println("Worker finished executing")
 		}
 	}
