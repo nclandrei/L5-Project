@@ -2,10 +2,13 @@ package main
 
 import (
 	"bytes"
+	"database/sql"
 	"encoding/json"
 	"flag"
 	"fmt"
+	_ "github.com/lib/pq"
 	"io/ioutil"
+	"log"
 	"net/http"
 )
 
@@ -37,25 +40,61 @@ func main() {
 
 	flag.Parse()
 
-	requestBody := &JqlRequestBody{
-		Jql:        fmt.Sprintf("project=%s", *projectName),
-		StartAt:    0,
-		MaxResults: *numberOfIssues,
-		Expand:     []string{"summary", "comments"},
+	responses := make(chan string, *numberOfIssues/500)
+	var respSlice []string
+
+	for i := 0; i < *numberOfIssues/500; i++ {
+		go func(j int) {
+			requestBody := &JqlRequestBody{
+				Jql:        fmt.Sprintf("project=%s", *projectName),
+				StartAt:    j * 500,
+				MaxResults: 500,
+			}
+
+			req, _ := json.Marshal(requestBody)
+
+			resp, err := http.Post(jiraURL, "application/json", bytes.NewBuffer(req))
+			if err != nil {
+				fmt.Printf("Could not send request: %v", err)
+			} else {
+				fmt.Println("response Status:", resp.Status)
+				defer resp.Body.Close()
+				if resp.StatusCode == http.StatusOK {
+					bodyBytes, _ := ioutil.ReadAll(resp.Body)
+					bodyString := string(bodyBytes)
+					responses <- bodyString
+					// fmt.Println(bodyString)
+				}
+			}
+		}(i)
 	}
 
-	req, _ := json.Marshal(requestBody)
+	for i := 0; i < *numberOfIssues/500; i++ {
+		newResponse := <-responses
+		respSlice = append(respSlice, newResponse)
+	}
 
-	resp, err := http.Post(jiraURL, "application/json", bytes.NewBuffer(req))
+	connStr := "user=nclandrei password=nclandrei dbname=nclandrei sslmode=disable"
+	db, err := sql.Open("postgres", connStr)
+
 	if err != nil {
-		fmt.Printf("Could not send request: %v", err)
-	} else {
-		fmt.Println("response Status:", resp.Status)
-		defer resp.Body.Close()
-		if resp.StatusCode == http.StatusOK {
-			bodyBytes, _ := ioutil.ReadAll(resp.Body)
-			bodyString := string(bodyBytes)
-			fmt.Println(bodyString)
-		}
+		log.Fatalf("Could not connect to database: %v", err)
+	}
+
+	rows, err := db.Query("SELECT * FROM ISSUES;")
+	if err != nil {
+		log.Fatalf("Could not query database for issues: %v", err)
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var id int
+		var summary string
+		var description string
+		var comments string
+		var key string
+		err = rows.Scan(&id, &summary, &description, &comments, &key)
+		fmt.Printf("%v | %v | %v | %v | %v\n", id, summary, description, comments, key)
 	}
 }
