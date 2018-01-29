@@ -101,10 +101,10 @@ func main() {
 	defer rows.Close()
 
 	for rows.Next() {
-		var id int
-		var summary string
-		var description string
-		var comments string
+		var id sql.NullInt64
+		var summary sql.NullString
+		var description sql.NullString
+		var comments sql.NullString
 		var key string
 		err = rows.Scan(&id, &summary, &description, &comments, &key)
 		fmt.Printf("%v | %v | %v | %v | %v\n", id, summary, description, comments, key)
