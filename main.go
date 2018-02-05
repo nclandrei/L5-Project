@@ -1,15 +1,10 @@
 package main
 
 import (
-	"bytes"
-	"database/sql"
 	"encoding/json"
 	"flag"
 	"fmt"
-	_ "github.com/lib/pq"
-	"io/ioutil"
 	"log"
-	"net/http"
 )
 
 const jiraURL = "https://issues.apache.org/jira/rest/api/2/search"
@@ -45,33 +40,7 @@ func main() {
 	var respSlice [][]byte
 
 	for i := 0; i < *numberOfIssues/100; i++ {
-		go func(j int) {
-			fmt.Println(j)
-			requestBody := &JqlRequestBody{
-				Jql:        fmt.Sprintf("project=%s", *projectName),
-				StartAt:    j * 500,
-				MaxResults: 500,
-			}
-
-			req, _ := json.Marshal(requestBody)
-
-			resp, err := http.Post(jiraURL, "application/json", bytes.NewBuffer(req))
-			if err != nil {
-				fmt.Printf("Could not send request: %v", err)
-			} else {
-				fmt.Println("response Status:", resp.Status)
-				defer resp.Body.Close()
-				if resp.StatusCode == http.StatusOK {
-					bodyBytes, _ := ioutil.ReadAll(resp.Body)
-					if bodyJSON, err := json.Marshal(bodyBytes); err != nil {
-						fmt.Printf("Could not marshal response to JSON: %v", err)
-					} else {
-						responses <- bodyJSON
-					}
-				}
-			}
-			done <- true
-		}(i)
+		go getIssues(responses, done, i, 500, *projectName)
 	}
 
 	doneCounter := 0
@@ -82,31 +51,15 @@ func main() {
 			respSlice = append(respSlice, newResponse)
 		case <-done:
 			doneCounter++
-			fmt.Println("Worker finished executing")
 		}
 	}
 
-	connStr := "user=nclandrei password=nclandrei dbname=nclandrei sslmode=disable"
-	db, err := sql.Open("postgres", connStr)
-
+	response := respSlice[0]
+	var dat map[string]interface{}
+	err := json.Unmarshal(response, &dat)
 	if err != nil {
-		log.Fatalf("Could not connect to database: %v", err)
-	}
-
-	rows, err := db.Query("SELECT * FROM ISSUES;")
-	if err != nil {
-		log.Fatalf("Could not query database for issues: %v", err)
-	}
-
-	defer rows.Close()
-
-	for rows.Next() {
-		var id sql.NullInt64
-		var summary sql.NullString
-		var description sql.NullString
-		var comments sql.NullString
-		var key string
-		err = rows.Scan(&id, &summary, &description, &comments, &key)
-		fmt.Printf("%v | %v | %v | %v | %v\n", id, summary, description, comments, key)
+		log.Fatalf("Cannot parse JSON: %v", err)
+	} else {
+		fmt.Println(dat)
 	}
 }
