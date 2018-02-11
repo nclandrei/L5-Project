@@ -15,20 +15,6 @@ type JiraIssue struct {
 	comments []Comment
 }
 
-// Comment defines the structure of a Jira issue comment
-type Comment struct {
-	author string
-	body   string
-}
-
-// JqlRequestBody defines what goes inside a JSON body for Jira JQL REST endpoint
-type JqlRequestBody struct {
-	Jql        string   `json:"jql,omitempty"`
-	StartAt    int      `json:"startAt,omitempty"`
-	MaxResults int      `json:"maxResults,omitempty"`
-	Expand     []string `json:"expand"`
-}
-
 func main() {
 	projectName := flag.String("project", "Kafka", "defines the name of the project to be queried upon")
 	numberOfIssues := flag.Int("issuesCount", 50000, "defines the number of issues to be retrieved")
@@ -54,12 +40,13 @@ func main() {
 		}
 	}
 
-	response := respSlice[0]
-	var dat map[string]interface{}
-	err := json.Unmarshal(response, &dat)
-	if err != nil {
-		log.Fatalf("Cannot parse JSON: %v", err)
-	} else {
-		fmt.Println(dat)
+	for _, value := range respSlice {
+		var dat []byte
+		err := json.Unmarshal(value, dat)
+		if err != nil {
+			log.Fatalf("Cannot parse JSON: %v", err)
+		} else {
+			fmt.Println(string(dat))
+		}
 	}
 }
