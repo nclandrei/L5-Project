@@ -88,7 +88,7 @@ func (client *JiraClient) GetPaginatedIssues(
 			bodyBytes, _ := ioutil.ReadAll(resp.Body)
 			var searchResponse SearchResponse
 			if err := json.Unmarshal(bodyBytes, &searchResponse); err != nil {
-				log.Printf("Could not marshal response to JSON: %v\n", err)
+				log.Printf("Could not unmarshal response from JSON: %v\n", err)
 			} else {
 				responses <- searchResponse
 			}
