@@ -10,6 +10,8 @@ import (
 	"time"
 )
 
+const jiraURL = "http://issues.apache.org/jira/rest/api/2/search"
+
 // SearchRequest defines what goes inside a JSON body for Jira JQL REST endpoint
 type SearchRequest struct {
 	Jql        string   `json:"jql,omitempty"`
@@ -18,9 +20,20 @@ type SearchRequest struct {
 	Fields     []string `json:"fields,omitempty"`
 }
 
-// SearchResponse defines the payload retrieved by Jira when a search is
-// conducted via its REST API
 type SearchResponse struct {
+	Expand     string  `json:"expand"`
+	StartAt    int     `json:"startAt"`
+	MaxResults int     `json:"maxResults"`
+	Total      int     `json:"total"`
+	Issues     []Issue `json:"issues"`
+}
+
+type Issue struct {
+	Fields Fields `json:"fields"`
+}
+
+// Fields defines the fields retrieved via the REST API
+type Fields struct {
 	Summary      string    `json:"summary"`
 	Description  string    `json:"description"`
 	TimeEstimate int       `json:"timeestimate"`
@@ -67,7 +80,7 @@ type CommentAuthor struct {
 // NewSearchRequest returns a new initialized request
 func NewSearchRequest(projectName string, paginationIndex, pageCount int) *SearchRequest {
 	return &SearchRequest{
-		Jql:        fmt.Sprintf("project=%s", projectName),
+		Jql:        fmt.Sprintf("project = %s", projectName),
 		StartAt:    paginationIndex * pageCount,
 		MaxResults: pageCount,
 		Fields: []string{"summary", "description", "comments", "key", "issuetype", "timespent",
@@ -76,28 +89,42 @@ func NewSearchRequest(projectName string, paginationIndex, pageCount int) *Searc
 }
 
 func getIssues(
-	responses chan<- []byte,
+	responses chan<- Issue,
 	done chan<- bool,
 	paginationIndex int,
 	pageCount int,
-	projectName string) {
+	projectName string,
+	client *http.Client) {
 
-	requestBody := NewSearchRequest(projectName, paginationIndex, pageCount)
+	searchRequestBody := NewSearchRequest(projectName, paginationIndex, pageCount)
+	reqBody, err := json.Marshal(searchRequestBody)
 
-	req, _ := json.Marshal(requestBody)
+	if err != nil {
+		log.Fatalf("Could not encode search request to JSON: %v\n", err)
+	}
 
-	resp, err := http.Post(jiraURL, "application/json", bytes.NewBuffer(req))
+	request, err := http.NewRequest("POST", jiraURL, bytes.NewBuffer(reqBody))
+
+	if err != nil {
+		log.Fatalf("Could not create request: %v\n", err)
+	}
+
+	request.Header.Add("Content-Type", "application/json")
+	request.Header.Add("Accept", "application/json")
+
+	resp, err := client.Do(request)
+
 	if err != nil {
 		log.Printf("Could not send request: %v", err)
 	} else {
 		defer resp.Body.Close()
 		if resp.StatusCode == http.StatusOK {
 			bodyBytes, _ := ioutil.ReadAll(resp.Body)
-			if bodyJSON, err := json.Marshal(bodyBytes); err != nil {
+			var searchResponse Issue
+			if err := json.Unmarshal(bodyBytes, &searchResponse); err != nil {
 				log.Printf("Could not marshal response to JSON: %v\n", err)
 			} else {
-				log.Println(bodyJSON)
-				responses <- bodyJSON
+				responses <- searchResponse
 			}
 		}
 	}
