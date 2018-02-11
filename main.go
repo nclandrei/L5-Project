@@ -7,12 +7,12 @@ import (
 
 // This defines the maximum number of concurrent client calls to Jira REST API
 // as, otherwise, it would start dropping the connections
-var maxNoGoroutines = 500
+var maxNoGoroutines = 10
 
 func main() {
 	projectName := flag.String("project", "Kafka", "defines the name of the project to be queried upon")
-	numberOfIssues := flag.Int("issuesCount", 50000, "defines the number of issues to be retrieved")
-	goroutinesCount := flag.Int("goroutinesCount", 100, "defines the number of goroutines to be used")
+	numberOfIssues := flag.Int("issuesCount", 2000, "defines the number of issues to be retrieved")
+	goroutinesCount := flag.Int("goroutinesCount", 5, "defines the number of goroutines to be used")
 
 	flag.Parse()
 
@@ -44,6 +44,8 @@ func main() {
 	}
 
 	for _, value := range respSlice {
-		log.Println(value.Issues[0].Fields.Description)
+		for _, issue := range value.Issues {
+			log.Printf("Key: " + issue.Key + "; Summary: " + issue.Fields.Summary + "\n")
+		}
 	}
 }
