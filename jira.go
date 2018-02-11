@@ -10,7 +10,21 @@ import (
 	"time"
 )
 
-const jiraURL = "http://issues.apache.org/jira/rest/api/2/search"
+// JiraClient defines the client for Jira
+type JiraClient struct {
+	URL        string
+	HTTPClient *http.Client
+}
+
+// NewJiraClient returns a new Jira Client
+func NewJiraClient() *JiraClient {
+	return &JiraClient{
+		URL: "http://issues.apache.org/jira/rest/api/2/search",
+		HTTPClient: &http.Client{
+			Timeout: time.Second * 15,
+		},
+	}
+}
 
 // SearchRequest defines what goes inside a JSON body for Jira JQL REST endpoint
 type SearchRequest struct {
@@ -20,6 +34,7 @@ type SearchRequest struct {
 	Fields     []string `json:"fields,omitempty"`
 }
 
+// SearchResponse defines the response payload retrieved through the search endpoint
 type SearchResponse struct {
 	Expand     string  `json:"expand"`
 	StartAt    int     `json:"startAt"`
@@ -28,73 +43,25 @@ type SearchResponse struct {
 	Issues     []Issue `json:"issues"`
 }
 
-type Issue struct {
-	Fields Fields `json:"fields"`
-}
-
-// Fields defines the fields retrieved via the REST API
-type Fields struct {
-	Summary      string    `json:"summary"`
-	Description  string    `json:"description"`
-	TimeEstimate int       `json:"timeestimate"`
-	TimeSpent    int       `json:"timespent"`
-	Status       Status    `json:"status"`
-	DueDate      time.Time `json:"duedate"`
-	Progress     string    `json:"progress"`
-	Comment      []Comment `json:"comment"`
-	Priority     Priority  `json:"priority"`
-	Key          string    `json:"key"`
-	IssueType    IssueType `json:"issuetype"`
-}
-
-// IssueType defines the issue type in Jira
-type IssueType struct {
-	ID   int    `json:"id"`
-	Name string `json:"name"`
-}
-
-// Priority holds the type of priority assigned to a Jira issue
-type Priority struct {
-	ID   int    `json:"id"`
-	Name string `json:"name"`
-}
-
-// Status defines the Jira issue status
-type Status struct {
-	Name string `json:"name"`
-}
-
-// Comment defines the structure of a Jira issue comment
-type Comment struct {
-	Body    string        `json:"body"`
-	Author  CommentAuthor `json:"author"`
-	Created time.Time     `json:"created"`
-	Updated time.Time     `json:"updated"`
-}
-
-// CommentAuthor holds the name of a comment's author
-type CommentAuthor struct {
-	Name string `json:"name"`
-}
-
 // NewSearchRequest returns a new initialized request
 func NewSearchRequest(projectName string, paginationIndex, pageCount int) *SearchRequest {
 	return &SearchRequest{
 		Jql:        fmt.Sprintf("project = %s", projectName),
 		StartAt:    paginationIndex * pageCount,
 		MaxResults: pageCount,
-		Fields: []string{"summary", "description", "comments", "key", "issuetype", "timespent",
-			"priority", "timeestimate", "status", "duedate", "progress"},
+		Fields:     []string{"summary", "description"},
+		// Fields: []string{"summary", "description", "comments", "key", "issuetype", "timespent",
+		// 	"priority", "timeestimate", "status", "duedate", "progress"},
 	}
 }
 
-func getIssues(
-	responses chan<- Issue,
+// GetPaginatedIssues adds to channels responses retrieved from Jira
+func (client *JiraClient) GetPaginatedIssues(
+	responses chan<- Fields,
 	done chan<- bool,
 	paginationIndex int,
 	pageCount int,
-	projectName string,
-	client *http.Client) {
+	projectName string) {
 
 	searchRequestBody := NewSearchRequest(projectName, paginationIndex, pageCount)
 	reqBody, err := json.Marshal(searchRequestBody)
@@ -103,7 +70,7 @@ func getIssues(
 		log.Fatalf("Could not encode search request to JSON: %v\n", err)
 	}
 
-	request, err := http.NewRequest("POST", jiraURL, bytes.NewBuffer(reqBody))
+	request, err := http.NewRequest("POST", client.URL, bytes.NewBuffer(reqBody))
 
 	if err != nil {
 		log.Fatalf("Could not create request: %v\n", err)
@@ -112,7 +79,7 @@ func getIssues(
 	request.Header.Add("Content-Type", "application/json")
 	request.Header.Add("Accept", "application/json")
 
-	resp, err := client.Do(request)
+	resp, err := client.HTTPClient.Do(request)
 
 	if err != nil {
 		log.Printf("Could not send request: %v", err)
@@ -124,7 +91,8 @@ func getIssues(
 			if err := json.Unmarshal(bodyBytes, &searchResponse); err != nil {
 				log.Printf("Could not marshal response to JSON: %v\n", err)
 			} else {
-				responses <- searchResponse
+				fmt.Println(searchResponse)
+				responses <- searchResponse.Fields
 			}
 		}
 	}
