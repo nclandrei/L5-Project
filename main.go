@@ -5,25 +5,36 @@ import (
 	"log"
 )
 
+// This defines the maximum number of concurrent client calls to Jira REST API
+// as, otherwise, it would start dropping the connections
+var maxNoGoroutines = 500
+
 func main() {
 	projectName := flag.String("project", "Kafka", "defines the name of the project to be queried upon")
-	// numberOfIssues := flag.Int("issuesCount", 50000, "defines the number of issues to be retrieved")
+	numberOfIssues := flag.Int("issuesCount", 50000, "defines the number of issues to be retrieved")
+	goroutinesCount := flag.Int("goroutinesCount", 100, "defines the number of goroutines to be used")
 
 	flag.Parse()
 
-	responses := make(chan Fields)
+	if *goroutinesCount > maxNoGoroutines {
+		log.Fatalf("cannot have more than maximum number of goroutines... exitting now")
+	}
+
+	issuesPerPage := float64(*numberOfIssues) / float64(*goroutinesCount)
+
+	responses := make(chan SearchResponse)
 	done := make(chan bool)
-	var respSlice []Fields
+	var respSlice []SearchResponse
 
 	jiraClient := NewJiraClient()
 
-	for i := 0; i < 1; i++ {
-		go jiraClient.GetPaginatedIssues(responses, done, i, 1, *projectName)
+	for i := 0; i < *goroutinesCount; i++ {
+		go jiraClient.GetPaginatedIssues(responses, done, i, int(issuesPerPage), *projectName)
 	}
 
 	doneCounter := 0
 
-	for doneCounter < 1 {
+	for doneCounter < *goroutinesCount {
 		select {
 		case newResponse := <-responses:
 			respSlice = append(respSlice, newResponse)
@@ -33,6 +44,6 @@ func main() {
 	}
 
 	for _, value := range respSlice {
-		log.Println(value)
+		log.Println(value.Issues[0].Fields.Description)
 	}
 }
