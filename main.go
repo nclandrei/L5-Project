@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"log"
-	"net/http"
 )
 
 func main() {
@@ -12,14 +11,14 @@ func main() {
 
 	flag.Parse()
 
-	responses := make(chan Issue)
+	responses := make(chan Fields)
 	done := make(chan bool)
-	var respSlice []Issue
+	var respSlice []Fields
 
-	jiraClient := http.DefaultClient
+	jiraClient := NewJiraClient()
 
 	for i := 0; i < 1; i++ {
-		go getIssues(responses, done, i, 1, *projectName, jiraClient)
+		go jiraClient.GetPaginatedIssues(responses, done, i, 1, *projectName)
 	}
 
 	doneCounter := 0
