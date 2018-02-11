@@ -1,37 +1,30 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
-	"fmt"
 	"log"
+	"net/http"
 )
-
-const jiraURL = "https://issues.apache.org/jira/rest/api/2/search"
-
-// JiraIssue represents an issue returned via Jira's REST API
-type JiraIssue struct {
-	summary  string
-	comments []Comment
-}
 
 func main() {
 	projectName := flag.String("project", "Kafka", "defines the name of the project to be queried upon")
-	numberOfIssues := flag.Int("issuesCount", 50000, "defines the number of issues to be retrieved")
+	// numberOfIssues := flag.Int("issuesCount", 50000, "defines the number of issues to be retrieved")
 
 	flag.Parse()
 
-	responses := make(chan []byte)
+	responses := make(chan Issue)
 	done := make(chan bool)
-	var respSlice [][]byte
+	var respSlice []Issue
 
-	for i := 0; i < *numberOfIssues/100; i++ {
-		go getIssues(responses, done, i, 500, *projectName)
+	jiraClient := http.DefaultClient
+
+	for i := 0; i < 1; i++ {
+		go getIssues(responses, done, i, 1, *projectName, jiraClient)
 	}
 
 	doneCounter := 0
 
-	for doneCounter < *numberOfIssues/100 {
+	for doneCounter < 1 {
 		select {
 		case newResponse := <-responses:
 			respSlice = append(respSlice, newResponse)
@@ -41,12 +34,6 @@ func main() {
 	}
 
 	for _, value := range respSlice {
-		var dat []byte
-		err := json.Unmarshal(value, dat)
-		if err != nil {
-			log.Fatalf("Cannot parse JSON: %v", err)
-		} else {
-			fmt.Println(string(dat))
-		}
+		log.Println(value)
 	}
 }
