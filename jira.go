@@ -77,7 +77,7 @@ func NewJiraClient() (*JiraClient, error) {
 			Jar:     cookieJar,
 		},
 		URL: &url.URL{
-			Scheme: "http",
+			Scheme: "https",
 			Host:   "issues.apache.org",
 		},
 	}, nil
@@ -104,6 +104,8 @@ func (client *JiraClient) AuthenticateClient() error {
 	if err != nil {
 		return err
 	}
+
+	request.Header.Add("Content-Type", "application/json")
 
 	response, err := client.Do(request)
 	if err != nil {
@@ -133,7 +135,6 @@ func (client *JiraClient) GetPaginatedIssues(
 	client.URL.Path = "jira/rest/api/2/search"
 
 	request, err := http.NewRequest("POST", client.URL.String(), bytes.NewBuffer(reqBody))
-
 	if err != nil {
 		log.Fatalf("Could not create request: %v\n", err)
 	}
