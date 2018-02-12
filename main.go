@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"github.com/nclandrei/L5-Project/jira"
+	"github.com/nclandrei/L5-Project/processing"
 	"log"
 )
 
@@ -60,5 +61,11 @@ func main() {
 		for _, issue := range value.Issues {
 			log.Printf("Key: " + issue.Key + "; Summary: " + issue.Fields.Summary + "\n")
 		}
+	}
+
+	if sentimentScore, err := processing.SentimentScoreFromDoc(respSlice[0].Issues[0].Fields.Summary); err != nil {
+		log.Printf("Could not calculate sentiment score: %v\n", err)
+	} else {
+		log.Printf("Score is: %v\n", sentimentScore)
 	}
 }
