@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"github.com/nclandrei/L5-Project/jira"
 	"log"
 )
 
@@ -22,11 +23,11 @@ func main() {
 
 	issuesPerPage := float64(*numberOfIssues) / float64(*goroutinesCount)
 
-	responses := make(chan SearchResponse)
+	responses := make(chan jira.SearchResponse)
 	done := make(chan bool)
-	var respSlice []SearchResponse
+	var respSlice []jira.SearchResponse
 
-	jiraClient, err := NewJiraClient()
+	jiraClient, err := jira.NewJiraClient()
 	if err != nil {
 		log.Fatalf("Could not create Jira client: %v\n", err)
 	}
