@@ -26,7 +26,16 @@ func main() {
 	done := make(chan bool)
 	var respSlice []SearchResponse
 
-	jiraClient := NewJiraClient()
+	jiraClient, err := NewJiraClient()
+	if err != nil {
+		log.Fatalf("Could not create Jira client: %v\n", err)
+	}
+
+	err = jiraClient.AuthenticateClient()
+
+	if err != nil {
+		log.Fatalf("Could not authenticate Jira client with Apache: %v\n", err)
+	}
 
 	for i := 0; i < *goroutinesCount; i++ {
 		go jiraClient.GetPaginatedIssues(responses, done, i, int(issuesPerPage), *projectName)
