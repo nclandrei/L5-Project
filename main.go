@@ -11,8 +11,8 @@ var maxNoGoroutines = 10
 
 func main() {
 	projectName := flag.String("project", "Kafka", "defines the name of the project to be queried upon")
-	numberOfIssues := flag.Int("issuesCount", 2000, "defines the number of issues to be retrieved")
-	goroutinesCount := flag.Int("goroutinesCount", 5, "defines the number of goroutines to be used")
+	numberOfIssues := flag.Int("issuesCount", 1000, "defines the number of issues to be retrieved")
+	goroutinesCount := flag.Int("goroutinesCount", 10, "defines the number of goroutines to be used")
 
 	flag.Parse()
 
@@ -52,7 +52,10 @@ func main() {
 		}
 	}
 
+	var counter int
+
 	for _, value := range respSlice {
+		counter += len(value.Issues)
 		for _, issue := range value.Issues {
 			log.Printf("Key: " + issue.Key + "; Summary: " + issue.Fields.Summary + "\n")
 		}
