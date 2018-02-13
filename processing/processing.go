@@ -6,7 +6,7 @@ import (
 	languagepb "google.golang.org/genproto/googleapis/cloud/language/v1"
 )
 
-// SentimentScoreFromDoc calculates sentiment score after querying GCP
+// SentimentScoreFromDoc calculates the sentiment score for a fragment after querying GCP
 func SentimentScoreFromDoc(doc string) (float32, error) {
 	ctx := context.Background()
 
@@ -16,7 +16,6 @@ func SentimentScoreFromDoc(doc string) (float32, error) {
 		return 0, err
 	}
 
-	// Detects the sentiment of the text.
 	sentiment, err := client.AnalyzeSentiment(ctx, &languagepb.AnalyzeSentimentRequest{
 		Document: &languagepb.Document{
 			Source: &languagepb.Document_Content{
