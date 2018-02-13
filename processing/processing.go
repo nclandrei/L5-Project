@@ -34,6 +34,7 @@ func SentimentScoreFromDoc(doc string) (float32, error) {
 	return sentiment.DocumentSentiment.Score, nil
 }
 
+// GrammarCorrectnessScoreFromDoc returns a grammar correctness score after spell checking a text fragment
 func GrammarCorrectnessScoreFromDoc(doc string) (float32, error) {
 	client := fuzzy.NewModel()
 
