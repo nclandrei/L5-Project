@@ -68,4 +68,6 @@ func main() {
 	} else {
 		log.Printf("Score is: %v\n", sentimentScore)
 	}
+
+	processing.GrammarCorrectnessScoreFromDoc("tihs is a tset")
 }
