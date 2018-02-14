@@ -7,10 +7,17 @@ import (
 	"log"
 )
 
-func readFromDatabase() {
+// NewIssueDatabase returns a new database for the retrieved Jira issues
+func NewIssueDatabase() (*sql.DB, error) {
 	connStr := "user=nclandrei password=nclandrei dbname=nclandrei sslmode=disable"
 	db, err := sql.Open("postgres", connStr)
+	if err != nil {
+		return nil, err
+	}
+	return db, nil
+}
 
+func ReadFromDB() {
 	if err != nil {
 		log.Fatalf("Could not connect to database: %v", err)
 	}
