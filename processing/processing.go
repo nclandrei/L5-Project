@@ -2,8 +2,7 @@ package processing
 
 import (
 	language "cloud.google.com/go/language/apiv1"
-	"fmt"
-	"github.com/sajari/fuzzy"
+	// "github.com/sajari/fuzzy"
 	"golang.org/x/net/context"
 	languagepb "google.golang.org/genproto/googleapis/cloud/language/v1"
 )
@@ -36,11 +35,5 @@ func SentimentScoreFromDoc(doc string) (float32, error) {
 
 // GrammarCorrectnessScoreFromDoc returns a grammar correctness score after spell checking a text fragment
 func GrammarCorrectnessScoreFromDoc(doc string) (float32, error) {
-	client := fuzzy.NewModel()
-
-	spellCheckedDoc := client.SpellCheck(doc)
-
-	fmt.Println(spellCheckedDoc)
-
 	return 0, nil
 }
