@@ -2,6 +2,7 @@ package db
 
 import (
 	"database/sql"
+	"fmt"
 	_ "github.com/lib/pq" // needed as the database is of type Postgres
 	"github.com/nclandrei/L5-Project/jira"
 )
@@ -54,6 +55,7 @@ func (db *JiraDatabase) GetIssues() ([]jira.Issue, error) {
 
 // AddIssues inserts a slice of issues into the issues table
 func (db *JiraDatabase) AddIssues(issues []jira.Issue) error {
+	errs := ""
 	for _, issue := range issues {
 		_, err := db.Exec("INSERT INTO issue VALUES ($1, $2, $3, $4, $5, $6);",
 			issue.Key,
@@ -63,8 +65,11 @@ func (db *JiraDatabase) AddIssues(issues []jira.Issue) error {
 			issue.Fields.TimeEstimate,
 			issue.Fields.DueDate)
 		if err != nil {
-			return err
+			errs += fmt.Sprintf("%s\n", err.Error())
 		}
+	}
+	if errs != "" {
+		return fmt.Errorf(errs)
 	}
 	return nil
 }
