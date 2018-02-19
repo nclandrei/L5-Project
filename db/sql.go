@@ -55,7 +55,7 @@ func (db *JiraDatabase) GetIssues() ([]jira.Issue, error) {
 // AddIssues inserts a slice of issues into the issues table
 func (db *JiraDatabase) AddIssues(issues []jira.Issue) error {
 	for _, issue := range issues {
-		_, err := db.Exec("INSERT INTO ISSUE(KEY, SUMMARY, DESCRIPTION, TIME_SPENT, TIME_ESTIMATE, DUE_DATE) VALUES (?, ?, ?, ?, ?, ?);",
+		_, err := db.Exec("INSERT INTO issue VALUES ($1, $2, $3, $4, $5, $6);",
 			issue.Key,
 			issue.Fields.Summary,
 			issue.Fields.Description,
