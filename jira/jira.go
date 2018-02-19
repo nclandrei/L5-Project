@@ -3,13 +3,13 @@ package jira
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
 	"os"
+	"strconv"
 	"time"
 )
 
@@ -17,14 +17,6 @@ import (
 type Client struct {
 	URL *url.URL
 	*http.Client
-}
-
-// SearchRequest defines what goes inside a JSON body for Jira JQL REST endpoint
-type SearchRequest struct {
-	Jql        string   `json:"jql,omitempty"`
-	StartAt    int      `json:"startAt,omitempty"`
-	MaxResults int      `json:"maxResults,omitempty"`
-	Fields     []string `json:"fields,omitempty"`
 }
 
 // SearchResponse defines the response payload retrieved through the search endpoint
@@ -36,8 +28,8 @@ type SearchResponse struct {
 	Issues     []Issue `json:"issues,omitempty"`
 }
 
-// JiraSession represents a JiraSession JSON response by the JIRA API.
-type JiraSession struct {
+// Session represents a Session JSON response by the JIRA API.
+type Session struct {
 	Self    string `json:"self,omitempty"`
 	Name    string `json:"name,omitempty"`
 	Session struct {
@@ -51,17 +43,6 @@ type JiraSession struct {
 		PreviousLoginTime   string `json:"previousLoginTime"`
 	} `json:"loginInfo"`
 	Cookies []*http.Cookie
-}
-
-// NewSearchRequest returns a new initialized request
-func NewSearchRequest(projectName string, paginationIndex, pageCount int) *SearchRequest {
-	return &SearchRequest{
-		Jql:        fmt.Sprintf("project = %s", projectName),
-		StartAt:    paginationIndex * pageCount,
-		MaxResults: pageCount,
-		Fields: []string{"summary", "description", "comments", "key", "issuetype", "timespent",
-			"priority", "timeestimate", "status", "duedate", "progress"},
-	}
 }
 
 // NewClient returns a new Jira Client
@@ -81,6 +62,18 @@ func NewClient() (*Client, error) {
 			Host:   "issues.apache.org",
 		},
 	}, nil
+}
+
+// setSearchPath sets the URL path for JQL search on a Jira client
+func (client *Client) setSearchPath(projectName string, paginationIndex, pageCount int) {
+	client.URL.Path = "/jira/rest/api/2/search"
+	queryValues := make(url.Values)
+	queryValues.Add("jql", fmt.Sprintf("project=%s", projectName))
+	queryValues.Add("startAt", strconv.Itoa(paginationIndex*pageCount))
+	queryValues.Add("maxResults", strconv.Itoa(pageCount))
+	queryValues.Add("fields", "summary, description, comments, key, issuetype, timespent, priority, timeestimate, status, duedate, progress")
+	queryValues.Add("expand", "changelog")
+	client.URL.RawQuery = queryValues.Encode()
 }
 
 // AuthenticateClient authenticates a Jira client with a specific instance of Jira
@@ -125,26 +118,8 @@ func (client *Client) GetPaginatedIssues(
 	pageCount int,
 	projectName string) {
 
-	searchRequestBody := NewSearchRequest(projectName, paginationIndex, pageCount)
-	reqBody, err := json.Marshal(searchRequestBody)
-
-	if err != nil {
-		responses <- nil
-		errs <- err
-	}
-
-	client.URL.Path = "jira/rest/api/2/search"
-
-	request, err := http.NewRequest("POST", client.URL.String(), bytes.NewBuffer(reqBody))
-	if err != nil {
-		responses <- nil
-		errs <- err
-	}
-
-	request.Header.Add("Content-Type", "application/json")
-	request.Header.Add("Accept", "application/json")
-
-	resp, err := client.Do(request)
+	client.setSearchPath(projectName, paginationIndex, pageCount)
+	resp, err := client.Get(client.URL.String())
 
 	if err != nil {
 		responses <- nil
@@ -162,7 +137,7 @@ func (client *Client) GetPaginatedIssues(
 				errs <- nil
 			}
 		} else {
-			errs <- errors.New("Status code different than 200")
+			errs <- fmt.Errorf("Status code different than 200: %v", resp.Status)
 			responses <- nil
 		}
 	}
