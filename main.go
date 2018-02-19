@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"github.com/nclandrei/L5-Project/db"
 	"github.com/nclandrei/L5-Project/jira"
 	"log"
@@ -46,6 +47,7 @@ func main() {
 	for i := 0; i < *goroutinesCount; i++ {
 		if searchResponse := <-done; searchResponse != nil {
 			for _, issue := range searchResponse.Issues {
+				fmt.Println(issue.Changelog)
 				issues = append(issues, issue)
 			}
 		}
