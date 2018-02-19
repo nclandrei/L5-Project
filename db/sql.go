@@ -2,40 +2,69 @@ package db
 
 import (
 	"database/sql"
-	"fmt"
-	_ "github.com/lib/pq"
-	"log"
+	_ "github.com/lib/pq" // needed as the database is of type Postgres
+	"github.com/nclandrei/L5-Project/jira"
 )
 
-// NewIssueDatabase returns a new database for the retrieved Jira issues
-func NewIssueDatabase() (*sql.DB, error) {
-	connStr := "user=nclandrei password=nclandrei dbname=nclandrei sslmode=disable"
-	db, err := sql.Open("postgres", connStr)
+const (
+	connection   = "user=nclandrei password=nclandrei dbname=nclandrei sslmode=disable"
+	databaseType = "postgres"
+)
+
+// JiraDatabase defines the jira database
+type JiraDatabase struct {
+	*sql.DB
+}
+
+// NewJiraDatabase returns a new database for the retrieved Jira issues
+func NewJiraDatabase() (*JiraDatabase, error) {
+	db, err := sql.Open(databaseType, connection)
 	if err != nil {
 		return nil, err
 	}
-	return db, nil
+	return &JiraDatabase{
+		DB: db,
+	}, nil
 }
 
-func ReadFromDB() {
+// GetIssues reads from the issues database and retrieves the issues as bytes
+func (db *JiraDatabase) GetIssues() ([]jira.Issue, error) {
+	rows, err := db.Query("SELECT * FROM ISSUES")
 	if err != nil {
-		log.Fatalf("Could not connect to database: %v", err)
+		return nil, err
 	}
-
-	rows, err := db.Query("SELECT * FROM ISSUES;")
-	if err != nil {
-		log.Fatalf("Could not query database for issues: %v", err)
-	}
-
 	defer rows.Close()
-
-	for rows.Next() {
-		var id sql.NullInt64
-		var summary sql.NullString
-		var description sql.NullString
-		var comments sql.NullString
-		var key string
-		err = rows.Scan(&id, &summary, &description, &comments, &key)
-		fmt.Printf("%v | %v | %v | %v | %v\n", id, summary, description, comments, key)
+	var issues []jira.Issue
+	for i := 0; rows.Next(); i++ {
+		issue := new(jira.Issue)
+		err = rows.Scan(
+			&issue.Key,
+			&issue.Fields.Summary,
+			&issue.Fields.Description,
+			&issue.Fields.TimeSpent,
+			&issue.Fields.TimeEstimate,
+			&issue.Fields.DueDate)
+		if err != nil {
+			return nil, err
+		}
+		issues = append(issues, *issue)
 	}
+	return issues, nil
+}
+
+// AddIssues inserts a slice of issues into the issues table
+func (db *JiraDatabase) AddIssues(issues []jira.Issue) error {
+	for _, issue := range issues {
+		_, err := db.Exec("INSERT INTO ISSUE(KEY, SUMMARY, DESCRIPTION, TIME_SPENT, TIME_ESTIMATE, DUE_DATE) VALUES (?, ?, ?, ?, ?, ?);",
+			issue.Key,
+			issue.Fields.Summary,
+			issue.Fields.Description,
+			issue.Fields.TimeSpent,
+			issue.Fields.TimeEstimate,
+			issue.Fields.DueDate)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
