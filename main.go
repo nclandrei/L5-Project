@@ -9,7 +9,7 @@ import (
 
 // This defines the maximum number of concurrent client calls to Jira REST API
 // as, otherwise, it would start dropping the connections
-var maxNoGoroutines = 5000
+const maxNoGoroutines = 100
 
 func main() {
 	projectName := flag.String("project", "Kafka", "defines the name of the project to be queried upon")
