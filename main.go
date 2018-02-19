@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"github.com/nclandrei/L5-Project/db"
 	"github.com/nclandrei/L5-Project/jira"
 	"log"
@@ -10,12 +9,12 @@ import (
 
 // This defines the maximum number of concurrent client calls to Jira REST API
 // as, otherwise, it would start dropping the connections
-var maxNoGoroutines = 10
+var maxNoGoroutines = 5000
 
 func main() {
 	projectName := flag.String("project", "Kafka", "defines the name of the project to be queried upon")
-	numberOfIssues := flag.Int("issuesCount", 1000, "defines the number of issues to be retrieved")
-	goroutinesCount := flag.Int("goroutinesCount", 10, "defines the number of goroutines to be used")
+	numberOfIssues := flag.Int("issuesCount", 1000000, "defines the number of issues to be retrieved")
+	goroutinesCount := flag.Int("goroutinesCount", 100, "defines the number of goroutines to be used")
 
 	flag.Parse()
 
@@ -47,7 +46,6 @@ func main() {
 	for i := 0; i < *goroutinesCount; i++ {
 		if searchResponse := <-done; searchResponse != nil {
 			for _, issue := range searchResponse.Issues {
-				fmt.Println(issue.Changelog)
 				issues = append(issues, issue)
 			}
 		}
