@@ -3,9 +3,9 @@ package jira
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
@@ -13,8 +13,8 @@ import (
 	"time"
 )
 
-// JiraClient defines the client for Jira
-type JiraClient struct {
+// Client defines the client for Jira
+type Client struct {
 	URL *url.URL
 	*http.Client
 }
@@ -64,14 +64,14 @@ func NewSearchRequest(projectName string, paginationIndex, pageCount int) *Searc
 	}
 }
 
-// NewJiraClient returns a new Jira Client
-func NewJiraClient() (*JiraClient, error) {
+// NewClient returns a new Jira Client
+func NewClient() (*Client, error) {
 	cookieJar, err := cookiejar.New(nil)
 	if err != nil {
 		return nil, err
 	}
 
-	return &JiraClient{
+	return &Client{
 		Client: &http.Client{
 			Timeout: time.Second * 10,
 			Jar:     cookieJar,
@@ -84,7 +84,7 @@ func NewJiraClient() (*JiraClient, error) {
 }
 
 // AuthenticateClient authenticates a Jira client with a specific instance of Jira
-func (client *JiraClient) AuthenticateClient() error {
+func (client *Client) AuthenticateClient() error {
 	authenticationRequest := struct {
 		Username string `json:"username"`
 		Password string `json:"password"`
@@ -118,9 +118,9 @@ func (client *JiraClient) AuthenticateClient() error {
 }
 
 // GetPaginatedIssues adds to channels responses retrieved from Jira
-func (client *JiraClient) GetPaginatedIssues(
-	responses chan<- SearchResponse,
-	done chan<- bool,
+func (client *Client) GetPaginatedIssues(
+	responses chan<- *SearchResponse,
+	errs chan<- error,
 	paginationIndex int,
 	pageCount int,
 	projectName string) {
@@ -129,14 +129,16 @@ func (client *JiraClient) GetPaginatedIssues(
 	reqBody, err := json.Marshal(searchRequestBody)
 
 	if err != nil {
-		log.Fatalf("Could not encode search request to JSON: %v\n", err)
+		responses <- nil
+		errs <- err
 	}
 
 	client.URL.Path = "jira/rest/api/2/search"
 
 	request, err := http.NewRequest("POST", client.URL.String(), bytes.NewBuffer(reqBody))
 	if err != nil {
-		log.Fatalf("Could not create request: %v\n", err)
+		responses <- nil
+		errs <- err
 	}
 
 	request.Header.Add("Content-Type", "application/json")
@@ -145,18 +147,23 @@ func (client *JiraClient) GetPaginatedIssues(
 	resp, err := client.Do(request)
 
 	if err != nil {
-		log.Printf("Could not send request: %v", err)
+		responses <- nil
+		errs <- err
 	} else {
 		defer resp.Body.Close()
 		if resp.StatusCode == http.StatusOK {
 			bodyBytes, _ := ioutil.ReadAll(resp.Body)
 			var searchResponse SearchResponse
 			if err := json.Unmarshal(bodyBytes, &searchResponse); err != nil {
-				log.Printf("Could not unmarshal response from JSON: %v\n", err)
+				errs <- err
+				responses <- nil
 			} else {
-				responses <- searchResponse
+				responses <- &searchResponse
+				errs <- nil
 			}
+		} else {
+			errs <- errors.New("Status code different than 200")
+			responses <- nil
 		}
 	}
-	done <- true
 }

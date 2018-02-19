@@ -24,11 +24,11 @@ func main() {
 
 	issuesPerPage := float64(*numberOfIssues) / float64(*goroutinesCount)
 
-	responses := make(chan jira.SearchResponse)
-	done := make(chan bool)
+	done := make(chan *jira.SearchResponse, *numberOfIssues)
+	errs := make(chan error, *numberOfIssues)
 	var issues []jira.Issue
 
-	jiraClient, err := jira.NewJiraClient()
+	jiraClient, err := jira.NewClient()
 	if err != nil {
 		log.Fatalf("Could not create Jira client: %v\n", err)
 	}
@@ -40,19 +40,17 @@ func main() {
 	}
 
 	for i := 0; i < *goroutinesCount; i++ {
-		go jiraClient.GetPaginatedIssues(responses, done, i, int(issuesPerPage), *projectName)
+		go jiraClient.GetPaginatedIssues(done, errs, i, int(issuesPerPage), *projectName)
 	}
 
-	doneCounter := 0
-
-	for doneCounter < *goroutinesCount {
-		select {
-		case newResponse := <-responses:
-			for _, issue := range newResponse.Issues {
+	for i := 0; i < *goroutinesCount; i++ {
+		if searchResponse := <-done; searchResponse != nil {
+			for _, issue := range searchResponse.Issues {
 				issues = append(issues, issue)
 			}
-		case <-done:
-			doneCounter++
+		}
+		if err := <-errs; err != nil {
+			log.Printf("Error while retrieving paginated issues: %v\n", err)
 		}
 	}
 
