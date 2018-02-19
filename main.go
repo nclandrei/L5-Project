@@ -2,8 +2,8 @@ package main
 
 import (
 	"flag"
+	"github.com/nclandrei/L5-Project/db"
 	"github.com/nclandrei/L5-Project/jira"
-	"github.com/nclandrei/L5-Project/processing"
 	"log"
 )
 
@@ -26,7 +26,7 @@ func main() {
 
 	responses := make(chan jira.SearchResponse)
 	done := make(chan bool)
-	var respSlice []jira.SearchResponse
+	var issues []jira.Issue
 
 	jiraClient, err := jira.NewJiraClient()
 	if err != nil {
@@ -48,26 +48,20 @@ func main() {
 	for doneCounter < *goroutinesCount {
 		select {
 		case newResponse := <-responses:
-			respSlice = append(respSlice, newResponse)
+			for _, issue := range newResponse.Issues {
+				issues = append(issues, issue)
+			}
 		case <-done:
 			doneCounter++
 		}
 	}
 
-	var counter int
-
-	for _, value := range respSlice {
-		counter += len(value.Issues)
-		for _, issue := range value.Issues {
-			log.Printf("Key: " + issue.Key + "; Summary: " + issue.Fields.Summary + "\n")
-		}
+	database, err := db.NewJiraDatabase()
+	if err != nil {
+		log.Fatalf("Could not create database: %v", err)
 	}
-
-	if sentimentScore, err := processing.SentimentScoreFromDoc(respSlice[0].Issues[0].Fields.Summary); err != nil {
-		log.Printf("Could not calculate sentiment score: %v\n", err)
-	} else {
-		log.Printf("Score is: %v\n", sentimentScore)
+	err = database.AddIssues(issues)
+	if err != nil {
+		log.Fatalf("Could not add issue to database: %v", err)
 	}
-
-	processing.GrammarCorrectnessScoreFromDoc("tihs is a tset")
 }
