@@ -73,3 +73,8 @@ func (db *JiraDatabase) AddIssues(issues []jira.Issue) error {
 	}
 	return nil
 }
+
+func (db *JiraDatabase) AddComments(comments []jira.Comment) error {
+	errs := ""
+
+}
