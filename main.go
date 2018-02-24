@@ -54,6 +54,8 @@ func main() {
 		}
 	}
 
+	log.Println("finished getting the issues from Jira")
+
 	database, err := db.NewJiraDatabase()
 	if err != nil {
 		log.Fatalf("Could not create database: %v", err)
