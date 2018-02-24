@@ -22,6 +22,7 @@ type Fields struct {
 	Comment      []Comment `json:"comment,omitempty"`
 	Priority     Priority  `json:"priority,omitempty"`
 	IssueType    IssueType `json:"issuetype,omitempty"`
+	Changelog    Changelog `json:"changelog,omitempty"`
 }
 
 // Changelog defines the entire changelog of a Jira issue
@@ -60,41 +61,25 @@ type ChangelogHistoryItem struct {
 type IssueType struct {
 	ID          string `json:"id,omitempty"`
 	Name        string `json:"name,omitempty"`
-	URL         string `json:"self,omitempty"`
 	Description string `json:"description,omitempty"`
-	SubTask     bool   `json:"subtask,omitempty"`
-	AvatarID    int    `json:"avatarId,omitempty"`
 }
 
 // Priority holds the type of priority assigned to a Jira issue
 type Priority struct {
-	ID      string `json:"id,omitempty"`
-	Name    string `json:"name,omitempty"`
-	IconURL string `json:"iconurl,omitempty"`
-	URL     string `json:"self,omitempty"`
+	ID   string `json:"id,omitempty"`
+	Name string `json:"name,omitempty"`
 }
 
 // Status defines the Jira issue status
 type Status struct {
-	URL            string         `json:"self,omitempty"`
-	Description    string         `json:"description,omitempty"`
-	IconURL        string         `json:"iconurl,omitempty"`
-	ID             string         `json:"id,omitempty"`
-	Name           string         `json:"name,omitempty"`
-	StatusCategory StatusCategory `json:"statusCategory,omitempty"`
-}
-
-// StatusCategory defines the category a Status belongs to (e.g. in progress)
-type StatusCategory struct {
-	URL       string `json:"self,omitempty"`
-	ID        int    `json:"id,omitempty"`
-	Name      string `json:"name,omitempty"`
-	Key       string `json:"key,omitempty"`
-	ColorName string `json:"colorName,omitempty"`
+	ID          string `json:"id,omitempty"`
+	Description string `json:"description,omitempty"`
+	Name        string `json:"name,omitempty"`
 }
 
 // Comment defines the structure of a Jira issue comment
 type Comment struct {
+	ID      string        `json:"id,omitempty"`
 	Body    string        `json:"body,omitempty"`
 	Author  CommentAuthor `json:"author"`
 	Created time.Time     `json:"created,omitempty"`
