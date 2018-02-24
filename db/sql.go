@@ -55,15 +55,70 @@ func (db *JiraDatabase) GetIssues() ([]jira.Issue, error) {
 
 // AddIssues inserts a slice of issues into the issues table
 func (db *JiraDatabase) AddIssues(issues []jira.Issue) error {
-	errs := ""
+	var errs string
+	issueCh := make(chan string, len(issues))
 	for _, issue := range issues {
-		_, err := db.Exec("INSERT INTO issue VALUES ($1, $2, $3, $4, $5, $6);",
-			issue.Key,
-			issue.Fields.Summary,
-			issue.Fields.Description,
-			issue.Fields.TimeSpent,
-			issue.Fields.TimeEstimate,
-			issue.Fields.DueDate)
+		go func(issue jira.Issue, issueCh chan string) {
+			errs := ""
+			_, err := db.Exec("INSERT INTO issue VALUES ($1, $2, $3, $4, $5, $6);",
+				issue.Key,
+				issue.Fields.Summary,
+				issue.Fields.Description,
+				issue.Fields.TimeSpent,
+				issue.Fields.TimeEstimate,
+				issue.Fields.DueDate)
+			if err != nil {
+				errs += fmt.Sprintf("Could not insert issue %s: %s\n", issue.Key, err.Error())
+			}
+			err = addPriority(db, issue.Key, issue.Fields.Priority)
+			if err != nil {
+				errs += fmt.Sprintf("Could not insert priority for issue %s: %s\n", issue.Key, err.Error())
+			}
+			err = addIssueType(db, issue.Key, issue.Fields.IssueType)
+			if err != nil {
+				errs += fmt.Sprintf("Could not insert issue type for issue %s: %s\n", issue.Key, err.Error())
+			}
+			err = addComments(db, issue.Key, issue.Fields.Comment)
+			if err != nil {
+				errs += fmt.Sprintf("Could not insert comments for issue %s: %s\n", issue.Key, err.Error())
+			}
+			err = addStatus(db, issue.Key, issue.Fields.Status)
+			if err != nil {
+				errs += fmt.Sprintf("Could not insert status for issue %s: %s\n", issue.Key, err.Error())
+			}
+			err = addChangelog(db, issue.Key, issue.Changelog)
+			if err != nil {
+				errs += fmt.Sprintf("Could not insert changelog for issue %s: %s\n", issue.Key, err.Error())
+			}
+			issueCh <- errs
+		}(issue, issueCh)
+	}
+	for i := 0; i < len(issues); i++ {
+		errs += <-issueCh
+	}
+	if errs != "" {
+		return fmt.Errorf(errs)
+	}
+	return nil
+}
+
+func addComments(db *JiraDatabase, issueKey string, comments []jira.Comment) error {
+	errs := ""
+	for _, comment := range comments {
+		_, err := db.Exec("INSERT INTO comment VALUES ($1, $2, $3, $4, $5);",
+			comment.ID,
+			issueKey,
+			comment.Body,
+			comment.Created,
+			comment.Updated,
+		)
+		if err != nil {
+			errs += fmt.Sprintf("%s\n", err.Error())
+		}
+		_, err = db.Exec("INSERT INTO comment_author VALUES ($1, $2);",
+			comment.ID,
+			comment.Author.Name,
+		)
 		if err != nil {
 			errs += fmt.Sprintf("%s\n", err.Error())
 		}
@@ -74,7 +129,83 @@ func (db *JiraDatabase) AddIssues(issues []jira.Issue) error {
 	return nil
 }
 
-func (db *JiraDatabase) AddComments(comments []jira.Comment) error {
-	errs := ""
+func addPriority(db *JiraDatabase, issueKey string, priority jira.Priority) error {
+	_, err := db.Exec("INSERT INTO priority VALUES ($1, $2, $3, $4, $5);",
+		issueKey,
+		priority.ID,
+		priority.Name,
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
 
+func addIssueType(db *JiraDatabase, issueKey string, issueType jira.IssueType) error {
+	_, err := db.Exec("INSERT INTO issue_type VALUES ($1, $2, $3, $4, $5, $6, $7);",
+		issueKey,
+		issueType.ID,
+		issueType.Name,
+		issueType.Description,
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func addStatus(db *JiraDatabase, issueKey string, status jira.Status) error {
+	_, err := db.Exec("INSERT INTO issue_type VALUES ($1, $2, $3, $4, $5, $6, $7);",
+		issueKey,
+		status.Description,
+		status.ID,
+		status.Name,
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func addChangelog(db *JiraDatabase, issueKey string, changelog jira.Changelog) error {
+	errs := ""
+	for _, history := range changelog.Histories {
+		_, err := db.Exec("INSERT INTO changelog_history VALUES ($1, $2, $3);",
+			history.ID,
+			issueKey,
+			history.Created,
+		)
+		if err != nil {
+			errs += fmt.Sprintf("%s\n", err.Error())
+		}
+		_, err = db.Exec("INSERT INTO changelog_history_author VALUES ($1, $2, $3, $4, $5, $6);",
+			history.ID,
+			history.Author.Name,
+			history.Author.Email,
+			history.Author.DisplayName,
+			history.Author.Active,
+			history.Author.TimeZone,
+		)
+		if err != nil {
+			errs += fmt.Sprintf("%s\n", err.Error())
+		}
+		for _, historyItem := range history.Items {
+			_, err := db.Exec("INSERT INTO changelog_history_item VALUES ($1, $2, $3, $4, $5, $6, $7);",
+				history.ID,
+				historyItem.Field,
+				historyItem.FieldType,
+				historyItem.From,
+				historyItem.FromString,
+				historyItem.To,
+				historyItem.ToString,
+			)
+			if err != nil {
+				errs += fmt.Sprintf("%s\n", err.Error())
+			}
+		}
+	}
+	if errs != "" {
+		return fmt.Errorf(errs)
+	}
+	return nil
 }
