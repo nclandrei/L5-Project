@@ -130,7 +130,7 @@ func addComments(db *JiraDatabase, issueKey string, comments []jira.Comment) err
 }
 
 func addPriority(db *JiraDatabase, issueKey string, priority jira.Priority) error {
-	_, err := db.Exec("INSERT INTO priority VALUES ($1, $2, $3, $4, $5);",
+	_, err := db.Exec("INSERT INTO priority VALUES ($1, $2, $3);",
 		issueKey,
 		priority.ID,
 		priority.Name,
@@ -142,7 +142,7 @@ func addPriority(db *JiraDatabase, issueKey string, priority jira.Priority) erro
 }
 
 func addIssueType(db *JiraDatabase, issueKey string, issueType jira.IssueType) error {
-	_, err := db.Exec("INSERT INTO issue_type VALUES ($1, $2, $3, $4, $5, $6, $7);",
+	_, err := db.Exec("INSERT INTO issue_type VALUES ($1, $2, $3, $4);",
 		issueKey,
 		issueType.ID,
 		issueType.Name,
@@ -155,7 +155,7 @@ func addIssueType(db *JiraDatabase, issueKey string, issueType jira.IssueType) e
 }
 
 func addStatus(db *JiraDatabase, issueKey string, status jira.Status) error {
-	_, err := db.Exec("INSERT INTO issue_type VALUES ($1, $2, $3, $4, $5, $6, $7);",
+	_, err := db.Exec("INSERT INTO issue_type VALUES ($1, $2, $3, $4);",
 		issueKey,
 		status.Description,
 		status.ID,
