@@ -112,8 +112,9 @@ func insertComments(db *JiraDatabase, issueKey string, comments []jira.Comment) 
 		if err != nil {
 			errs += fmt.Sprintf("%s\n", err.Error())
 		}
-		_, err = db.Exec("INSERT INTO comment_author VALUES ($1, $2);",
+		_, err = db.Exec("INSERT INTO comment_author VALUES ($1, $2, $3);",
 			comment.ID,
+			issueKey,
 			comment.Author.Name,
 		)
 		if err != nil {
@@ -175,19 +176,20 @@ func insertChangelog(db *JiraDatabase, issueKey string, changelog jira.Changelog
 		if err != nil {
 			errs += fmt.Sprintf("%s\n", err.Error())
 		}
-		_, err = db.Exec("INSERT INTO changelog_history_author VALUES ($1, $2, $3, $4, $5, $6);",
+		_, err = db.Exec("INSERT INTO changelog_history_author VALUES ($1, $2, $3, $4, $5, $6, $7);",
 			history.ID,
 			history.Author.Name,
 			history.Author.Email,
 			history.Author.DisplayName,
 			history.Author.Active,
 			history.Author.TimeZone,
+			issueKey,
 		)
 		if err != nil {
 			errs += fmt.Sprintf("%s\n", err.Error())
 		}
 		for _, historyItem := range history.Items {
-			_, err := db.Exec("INSERT INTO changelog_history_item VALUES ($1, $2, $3, $4, $5, $6, $7);",
+			_, err := db.Exec("INSERT INTO changelog_history_item VALUES ($1, $2, $3, $4, $5, $6, $7, $8);",
 				history.ID,
 				historyItem.Field,
 				historyItem.FieldType,
@@ -195,6 +197,7 @@ func insertChangelog(db *JiraDatabase, issueKey string, changelog jira.Changelog
 				historyItem.FromString,
 				historyItem.To,
 				historyItem.ToString,
+				issueKey,
 			)
 			if err != nil {
 				errs += fmt.Sprintf("%s\n", err.Error())
