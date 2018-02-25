@@ -1,9 +1,5 @@
 package jira
 
-import (
-	"time"
-)
-
 // Issue defines the Jira issue retrieved via the REST API
 type Issue struct {
 	Key       string    `json:"key,omitempty"`
@@ -19,7 +15,7 @@ type Fields struct {
 	TimeSpent    int       `json:"timespent,omitempty"`
 	Status       Status    `json:"status,omitempty"`
 	DueDate      string    `json:"duedate,omitempty"`
-	Comment      []Comment `json:"comment,omitempty"`
+	Comments     Comments  `json:"comment,omitempty"`
 	Priority     Priority  `json:"priority,omitempty"`
 	IssueType    IssueType `json:"issuetype,omitempty"`
 }
@@ -79,13 +75,18 @@ type Status struct {
 	Name        string `json:"name,omitempty"`
 }
 
+// Comments defines the Jira field that holds the comments
+type Comments struct {
+	Comments []Comment `json:"comments,omitempty"`
+}
+
 // Comment defines the structure of a Jira issue comment
 type Comment struct {
 	ID      string        `json:"id,omitempty"`
 	Body    string        `json:"body,omitempty"`
 	Author  CommentAuthor `json:"author"`
-	Created time.Time     `json:"created,omitempty"`
-	Updated time.Time     `json:"updated,omitempty"`
+	Created string        `json:"created,omitempty"`
+	Updated string        `json:"updated,omitempty"`
 }
 
 // CommentAuthor holds the name of a comment's author

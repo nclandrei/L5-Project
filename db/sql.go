@@ -81,7 +81,7 @@ func (db *JiraDatabase) InsertIssues(project string, issues []jira.Issue) error 
 		if err != nil {
 			errs += fmt.Sprintf("Could not insert issue type for issue %s: %s\n", issue.Key, err.Error())
 		}
-		err = insertComments(db, issue.Key, issue.Fields.Comment)
+		err = insertComments(db, issue.Key, issue.Fields.Comments.Comments)
 		if err != nil {
 			errs += fmt.Sprintf("Could not insert comments for issue %s: %s\n", issue.Key, err.Error())
 		}
