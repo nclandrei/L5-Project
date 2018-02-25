@@ -22,12 +22,14 @@ type Fields struct {
 	Comment      []Comment `json:"comment,omitempty"`
 	Priority     Priority  `json:"priority,omitempty"`
 	IssueType    IssueType `json:"issuetype,omitempty"`
-	Changelog    Changelog `json:"changelog,omitempty"`
 }
 
 // Changelog defines the entire changelog of a Jira issue
 type Changelog struct {
-	Histories []ChangelogHistory `json:"histories,omitempty"`
+	StartAt    int                `json:"startAt,omitempty"`
+	MaxResults int                `json:"maxResults,omitempty"`
+	Total      int                `json:"total,omitempty"`
+	Histories  []ChangelogHistory `json:"histories,omitempty"`
 }
 
 // ChangelogHistory defines the entire history for some specific items
