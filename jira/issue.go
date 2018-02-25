@@ -13,6 +13,7 @@ type Fields struct {
 	Description  string    `json:"description,omitempty"`
 	TimeEstimate int       `json:"timeestimate,omitempty"`
 	TimeSpent    int       `json:"timespent,omitempty"`
+	Created      string    `json:"created,omitempty"`
 	Status       Status    `json:"status,omitempty"`
 	DueDate      string    `json:"duedate,omitempty"`
 	Comments     Comments  `json:"comment,omitempty"`
@@ -70,9 +71,10 @@ type Priority struct {
 
 // Status defines the Jira issue status
 type Status struct {
-	ID          string `json:"id,omitempty"`
-	Description string `json:"description,omitempty"`
-	Name        string `json:"name,omitempty"`
+	ID             string   `json:"id,omitempty"`
+	Description    string   `json:"description,omitempty"`
+	Name           string   `json:"name,omitempty"`
+	StatusCategory struct{} `json:"-"`
 }
 
 // Comments defines the Jira field that holds the comments
