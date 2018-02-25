@@ -68,7 +68,7 @@ func (client *Client) setSearchPath(projectName string, paginationIndex, pageCou
 	queryValues.Add("jql", fmt.Sprintf("project=%s", projectName))
 	queryValues.Add("startAt", strconv.Itoa(paginationIndex*pageCount))
 	queryValues.Add("maxResults", strconv.Itoa(pageCount))
-	queryValues.Add("fields", "summary, description, comments, key, issuetype, timespent, priority, timeestimate, status, duedate, progress")
+	queryValues.Add("fields", "summary, description, comment, key, issuetype, timespent, priority, timeestimate, status, duedate, progress")
 	queryValues.Add("expand", "changelog")
 	client.URL.RawQuery = queryValues.Encode()
 }
