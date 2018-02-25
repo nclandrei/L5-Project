@@ -7,21 +7,21 @@ import (
 
 // Time holds the time formatted in Jira's specific format
 type Time struct {
-	time time.Time
+	Time time.Time
 }
 
 // UnmarshalJSON represents the formatting of JSON time for Jira's specific format
 func (t *Time) UnmarshalJSON(b []byte) error {
 	s := strings.Trim(string(b), "\"")
 	if s == "null" || s == "" {
-		t.time = time.Time{}
+		t.Time = time.Time{}
 		return nil
 	}
 	jiraTime, err := time.Parse("2006-01-02T15:04:05.000-0700", s)
 	if err == nil {
-		t.time = jiraTime
+		t.Time = jiraTime
 	} else {
-		t.time, err = time.Parse("2006-01-02", s)
+		t.Time, err = time.Parse("2006-01-02", s)
 	}
 	return err
 }
