@@ -133,8 +133,8 @@ func (client *Client) GetPaginatedIssues(
 				errs <- err
 				responses <- nil
 			} else {
-				responses <- &searchResponse
 				errs <- nil
+				responses <- &searchResponse
 			}
 		} else {
 			errs <- fmt.Errorf("Status code different than 200: %v", resp.Status)
