@@ -61,6 +61,26 @@ func NewClient(url *url.URL) (*Client, error) {
 	}, nil
 }
 
+// GetNumberOfIssues returns the total number of issues for a Jira project
+func (client *Client) GetNumberOfIssues(projectName string) (int, error) {
+	client.URL.Path = "/jira/rest/api/2/search"
+	client.URL.RawQuery = "jql=project=" + projectName
+	resp, err := client.Get(client.URL.String())
+	if err != nil {
+		return -1, err
+	}
+	if resp.StatusCode != 200 {
+		return -1, fmt.Errorf("status %d received when getting total number of issues", resp.StatusCode)
+	}
+	defer resp.Body.Close()
+	bodyBytes, _ := ioutil.ReadAll(resp.Body)
+	var searchResponse SearchResponse
+	if err := json.Unmarshal(bodyBytes, &searchResponse); err != nil {
+		return -1, err
+	}
+	return searchResponse.Total, nil
+}
+
 // setSearchPath sets the URL path for JQL search on a Jira client
 func (client *Client) setSearchPath(projectName string, paginationIndex, pageCount int) {
 	client.URL.Path = "/jira/rest/api/2/search"
