@@ -23,6 +23,8 @@ func NewJiraDatabase() (*JiraDatabase, error) {
 	if err != nil {
 		return nil, err
 	}
+	db.SetMaxOpenConns(100000)
+	db.SetMaxIdleConns(100000)
 	return &JiraDatabase{
 		DB: db,
 	}, nil
@@ -53,56 +55,56 @@ func (db *JiraDatabase) GetIssues() ([]jira.Issue, error) {
 	return issues, nil
 }
 
-// AddIssues inserts a slice of issues into the issues table
-func (db *JiraDatabase) AddIssues(issues []jira.Issue) error {
+// InsertIssues inserts a slice of issues into the issues table
+func (db *JiraDatabase) InsertIssues(issues []jira.Issue) error {
 	var errs string
-	issueCh := make(chan string, len(issues))
+	// issueCh := make(chan string, len(issues))
 	for _, issue := range issues {
-		go func(issue jira.Issue, issueCh chan string) {
-			errs := ""
-			_, err := db.Exec("INSERT INTO issue VALUES ($1, $2, $3, $4, $5, $6);",
-				issue.Key,
-				issue.Fields.Summary,
-				issue.Fields.Description,
-				issue.Fields.TimeSpent,
-				issue.Fields.TimeEstimate,
-				issue.Fields.DueDate)
-			if err != nil {
-				errs += fmt.Sprintf("Could not insert issue %s: %s\n", issue.Key, err.Error())
-			}
-			err = addPriority(db, issue.Key, issue.Fields.Priority)
-			if err != nil {
-				errs += fmt.Sprintf("Could not insert priority for issue %s: %s\n", issue.Key, err.Error())
-			}
-			err = addIssueType(db, issue.Key, issue.Fields.IssueType)
-			if err != nil {
-				errs += fmt.Sprintf("Could not insert issue type for issue %s: %s\n", issue.Key, err.Error())
-			}
-			err = addComments(db, issue.Key, issue.Fields.Comment)
-			if err != nil {
-				errs += fmt.Sprintf("Could not insert comments for issue %s: %s\n", issue.Key, err.Error())
-			}
-			err = addStatus(db, issue.Key, issue.Fields.Status)
-			if err != nil {
-				errs += fmt.Sprintf("Could not insert status for issue %s: %s\n", issue.Key, err.Error())
-			}
-			err = addChangelog(db, issue.Key, issue.Changelog)
-			if err != nil {
-				errs += fmt.Sprintf("Could not insert changelog for issue %s: %s\n", issue.Key, err.Error())
-			}
-			issueCh <- errs
-		}(issue, issueCh)
+		// go func(issue jira.Issue, issueCh chan string) {
+		errs := ""
+		_, err := db.Exec("INSERT INTO issue VALUES ($1, $2, $3, $4, $5, $6);",
+			issue.Key,
+			issue.Fields.Summary,
+			issue.Fields.Description,
+			issue.Fields.TimeSpent,
+			issue.Fields.TimeEstimate,
+			issue.Fields.DueDate)
+		if err != nil {
+			errs += fmt.Sprintf("Could not insert issue %s: %s\n", issue.Key, err.Error())
+		}
+		err = insertPriority(db, issue.Key, issue.Fields.Priority)
+		if err != nil {
+			errs += fmt.Sprintf("Could not insert priority for issue %s: %s\n", issue.Key, err.Error())
+		}
+		err = insertIssueType(db, issue.Key, issue.Fields.IssueType)
+		if err != nil {
+			errs += fmt.Sprintf("Could not insert issue type for issue %s: %s\n", issue.Key, err.Error())
+		}
+		err = insertComments(db, issue.Key, issue.Fields.Comment)
+		if err != nil {
+			errs += fmt.Sprintf("Could not insert comments for issue %s: %s\n", issue.Key, err.Error())
+		}
+		err = insertStatus(db, issue.Key, issue.Fields.Status)
+		if err != nil {
+			errs += fmt.Sprintf("Could not insert status for issue %s: %s\n", issue.Key, err.Error())
+		}
+		err = insertChangelog(db, issue.Key, issue.Changelog)
+		if err != nil {
+			errs += fmt.Sprintf("Could not insert changelog for issue %s: %s\n", issue.Key, err.Error())
+		}
+		// issueCh <- errs
+		// }(issue, issueCh)
 	}
-	for i := 0; i < len(issues); i++ {
-		errs += <-issueCh
-	}
+	// for i := 0; i < len(issues); i++ {
+	// 	errs += <-issueCh
+	// }
 	if errs != "" {
 		return fmt.Errorf(errs)
 	}
 	return nil
 }
 
-func addComments(db *JiraDatabase, issueKey string, comments []jira.Comment) error {
+func insertComments(db *JiraDatabase, issueKey string, comments []jira.Comment) error {
 	errs := ""
 	for _, comment := range comments {
 		_, err := db.Exec("INSERT INTO comment VALUES ($1, $2, $3, $4, $5);",
@@ -129,7 +131,7 @@ func addComments(db *JiraDatabase, issueKey string, comments []jira.Comment) err
 	return nil
 }
 
-func addPriority(db *JiraDatabase, issueKey string, priority jira.Priority) error {
+func insertPriority(db *JiraDatabase, issueKey string, priority jira.Priority) error {
 	_, err := db.Exec("INSERT INTO priority VALUES ($1, $2, $3);",
 		issueKey,
 		priority.ID,
@@ -141,7 +143,7 @@ func addPriority(db *JiraDatabase, issueKey string, priority jira.Priority) erro
 	return nil
 }
 
-func addIssueType(db *JiraDatabase, issueKey string, issueType jira.IssueType) error {
+func insertIssueType(db *JiraDatabase, issueKey string, issueType jira.IssueType) error {
 	_, err := db.Exec("INSERT INTO issue_type VALUES ($1, $2, $3, $4);",
 		issueKey,
 		issueType.ID,
@@ -154,7 +156,7 @@ func addIssueType(db *JiraDatabase, issueKey string, issueType jira.IssueType) e
 	return nil
 }
 
-func addStatus(db *JiraDatabase, issueKey string, status jira.Status) error {
+func insertStatus(db *JiraDatabase, issueKey string, status jira.Status) error {
 	_, err := db.Exec("INSERT INTO issue_type VALUES ($1, $2, $3, $4);",
 		issueKey,
 		status.Description,
@@ -167,7 +169,7 @@ func addStatus(db *JiraDatabase, issueKey string, status jira.Status) error {
 	return nil
 }
 
-func addChangelog(db *JiraDatabase, issueKey string, changelog jira.Changelog) error {
+func insertChangelog(db *JiraDatabase, issueKey string, changelog jira.Changelog) error {
 	errs := ""
 	for _, history := range changelog.Histories {
 		_, err := db.Exec("INSERT INTO changelog_history VALUES ($1, $2, $3);",
