@@ -30,7 +30,7 @@ func main() {
 	var issues []jira.Issue
 
 	jiraClient, err := jira.NewClient(&url.URL{
-		Scheme: "https",
+		Scheme: "http",
 		Host:   "issues.apache.org",
 	})
 	if err != nil {
