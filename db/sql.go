@@ -69,6 +69,7 @@ func (db *JiraDatabase) InsertIssues(project string, issues []jira.Issue) error 
 			issue.Fields.TimeEstimate,
 			issue.Fields.DueDate,
 			project,
+			issue.Fields.Created,
 		)
 		if err != nil {
 			errs += fmt.Sprintf("Could not insert issue %s: %s\n", issue.Key, err.Error())

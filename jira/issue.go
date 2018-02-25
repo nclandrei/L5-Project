@@ -1,5 +1,31 @@
 package jira
 
+import (
+	"strings"
+	"time"
+)
+
+// Time holds the time formatted in Jira's specific format
+type Time struct {
+	time time.Time
+}
+
+// UnmarshalJSON represents the formatting of JSON time for Jira's specific format
+func (t *Time) UnmarshalJSON(b []byte) error {
+	s := strings.Trim(string(b), "\"")
+	if s == "null" || s == "" {
+		t.time = time.Time{}
+		return nil
+	}
+	jiraTime, err := time.Parse("2006-01-02T15:04:05.000-0700", s)
+	if err == nil {
+		t.time = jiraTime
+	} else {
+		t.time, err = time.Parse("2006-01-02", s)
+	}
+	return err
+}
+
 // Issue defines the Jira issue retrieved via the REST API
 type Issue struct {
 	Key       string    `json:"key,omitempty"`
@@ -13,9 +39,9 @@ type Fields struct {
 	Description  string    `json:"description,omitempty"`
 	TimeEstimate int       `json:"timeestimate,omitempty"`
 	TimeSpent    int       `json:"timespent,omitempty"`
-	Created      string    `json:"created,omitempty"`
+	Created      Time      `json:"created,omitempty"`
 	Status       Status    `json:"status,omitempty"`
-	DueDate      string    `json:"duedate,omitempty"`
+	DueDate      Time      `json:"duedate,omitempty"`
 	Comments     Comments  `json:"comment,omitempty"`
 	Priority     Priority  `json:"priority,omitempty"`
 	IssueType    IssueType `json:"issuetype,omitempty"`
@@ -33,7 +59,7 @@ type Changelog struct {
 type ChangelogHistory struct {
 	ID      string                 `json:"id,omitempty"`
 	Author  ChangelogHistoryAuthor `json:"author,omitempty"`
-	Created string                 `json:"created,omitempty"`
+	Created Time                   `json:"created,omitempty"`
 	Items   []ChangelogHistoryItem `json:"items,omitempty"`
 }
 
@@ -87,8 +113,8 @@ type Comment struct {
 	ID      string        `json:"id,omitempty"`
 	Body    string        `json:"body,omitempty"`
 	Author  CommentAuthor `json:"author"`
-	Created string        `json:"created,omitempty"`
-	Updated string        `json:"updated,omitempty"`
+	Created Time          `json:"created,omitempty"`
+	Updated Time          `json:"updated,omitempty"`
 }
 
 // CommentAuthor holds the name of a comment's author
