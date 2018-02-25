@@ -3,9 +3,8 @@ package db
 import (
 	"database/sql"
 	"fmt"
-	_ "github.com/lib/pq" // needed as the database is of type Postgres
+	"github.com/lib/pq"
 	"github.com/nclandrei/L5-Project/jira"
-	"time"
 )
 
 const (
@@ -66,9 +65,9 @@ func (db *JiraDatabase) InsertIssues(project string, issues []jira.Issue) error 
 			issue.Fields.Description,
 			issue.Fields.TimeSpent,
 			issue.Fields.TimeEstimate,
-			issue.Fields.DueDate.Time.Format(time.RFC3339),
+			pq.FormatTimestamp(issue.Fields.DueDate.Time),
 			project,
-			issue.Fields.Created.Time.Format(time.RFC3339),
+			pq.FormatTimestamp(issue.Fields.Created.Time),
 		)
 		if err != nil {
 			errs += fmt.Sprintf("Could not insert issue %s: %s\n", issue.Key, err.Error())
@@ -107,8 +106,8 @@ func insertComments(db *JiraDatabase, issueKey string, comments []jira.Comment) 
 			comment.ID,
 			issueKey,
 			comment.Body,
-			comment.Created.Time.Format(time.RFC3339),
-			comment.Updated.Time.Format(time.RFC3339),
+			pq.FormatTimestamp(comment.Created.Time),
+			pq.FormatTimestamp(comment.Updated.Time),
 		)
 		if err != nil {
 			errs += fmt.Sprintf("%s\n", err.Error())
@@ -171,7 +170,7 @@ func insertChangelog(db *JiraDatabase, issueKey string, changelog jira.Changelog
 		_, err := db.Exec("INSERT INTO changelog_history VALUES ($1, $2, $3);",
 			history.ID,
 			issueKey,
-			history.Created.Time.Format(time.RFC3339),
+			pq.FormatTimestamp(history.Created.Time),
 		)
 		if err != nil {
 			errs += fmt.Sprintf("%s\n", err.Error())
