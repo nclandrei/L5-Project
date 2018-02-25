@@ -153,7 +153,7 @@ func insertIssueType(db *JiraDatabase, issueKey string, issueType jira.IssueType
 }
 
 func insertStatus(db *JiraDatabase, issueKey string, status jira.Status) error {
-	_, err := db.Exec("INSERT INTO issue_type VALUES ($1, $2, $3, $4);",
+	_, err := db.Exec("INSERT INTO status VALUES ($1, $2, $3, $4);",
 		issueKey,
 		status.Description,
 		status.ID,
