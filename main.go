@@ -2,9 +2,11 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"github.com/nclandrei/L5-Project/db"
 	"github.com/nclandrei/L5-Project/jira"
 	"log"
+	"math"
 	"net/url"
 )
 
@@ -14,7 +16,6 @@ const maxNoGoroutines = 100
 
 func main() {
 	projectName := flag.String("project", "Kafka", "defines the name of the project to be queried upon")
-	numberOfIssues := flag.Int("issuesCount", 10000, "defines the number of issues to be retrieved")
 	goroutinesCount := flag.Int("goroutinesCount", 100, "defines the number of goroutines to be used")
 
 	flag.Parse()
@@ -22,12 +23,6 @@ func main() {
 	if *goroutinesCount > maxNoGoroutines {
 		log.Fatalf("cannot have more than maximum number of goroutines... exiting now")
 	}
-
-	issuesPerPage := float64(*numberOfIssues) / float64(*goroutinesCount)
-
-	done := make(chan *jira.SearchResponse, *numberOfIssues)
-	errs := make(chan error, *numberOfIssues)
-	var issues []jira.Issue
 
 	jiraClient, err := jira.NewClient(&url.URL{
 		Scheme: "http",
@@ -42,13 +37,25 @@ func main() {
 		log.Fatalf("Could not authenticate Jira client with Apache: %v\n", err)
 	}
 
+	numberOfIssues, err := jiraClient.GetNumberOfIssues(*projectName)
+	if err != nil {
+		log.Fatalf("Could not get total number of issues: %v\n", err)
+	}
+
+	fmt.Printf("total number of issues: %d", numberOfIssues)
+
+	issuesPerPage := math.Ceil(float64(numberOfIssues) / float64(*goroutinesCount))
+
+	done := make(chan *jira.SearchResponse, numberOfIssues)
+	errs := make(chan error, numberOfIssues)
+	var issues []jira.Issue
+
 	for i := 0; i < *goroutinesCount; i++ {
 		go jiraClient.GetPaginatedIssues(done, errs, i, int(issuesPerPage), *projectName)
 	}
 
 	for i := 0; i < *goroutinesCount; i++ {
 		if searchResponse := <-done; searchResponse != nil {
-			log.Printf("issues length: %d\n", len(searchResponse.Issues))
 			for _, issue := range searchResponse.Issues {
 				issues = append(issues, issue)
 			}
