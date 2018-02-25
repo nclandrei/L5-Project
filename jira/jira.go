@@ -46,7 +46,7 @@ type Session struct {
 }
 
 // NewClient returns a new Jira Client
-func NewClient() (*Client, error) {
+func NewClient(url *url.URL) (*Client, error) {
 	cookieJar, err := cookiejar.New(nil)
 	if err != nil {
 		return nil, err
@@ -54,13 +54,10 @@ func NewClient() (*Client, error) {
 
 	return &Client{
 		Client: &http.Client{
-			Timeout: time.Second * 60,
+			Timeout: time.Second * 90,
 			Jar:     cookieJar,
 		},
-		URL: &url.URL{
-			Scheme: "https",
-			Host:   "issues.apache.org",
-		},
+		URL: url,
 	}, nil
 }
 
@@ -86,7 +83,7 @@ func (client *Client) AuthenticateClient() error {
 		os.Getenv("APACHE_JIRA_PASSWORD"),
 	}
 
-	client.URL.Path = "jira/rest/auth/1/session"
+	client.URL.Path = "/jira/rest/auth/1/session"
 
 	jsonPayload, err := json.Marshal(authenticationRequest)
 	if err != nil {
