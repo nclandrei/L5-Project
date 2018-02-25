@@ -5,6 +5,7 @@ import (
 	"fmt"
 	_ "github.com/lib/pq" // needed as the database is of type Postgres
 	"github.com/nclandrei/L5-Project/jira"
+	"time"
 )
 
 const (
@@ -23,8 +24,6 @@ func NewJiraDatabase() (*JiraDatabase, error) {
 	if err != nil {
 		return nil, err
 	}
-	db.SetMaxOpenConns(100000)
-	db.SetMaxIdleConns(100000)
 	return &JiraDatabase{
 		DB: db,
 	}, nil
@@ -32,7 +31,7 @@ func NewJiraDatabase() (*JiraDatabase, error) {
 
 // GetIssues reads from the issues database and retrieves the issues as bytes
 func (db *JiraDatabase) GetIssues() ([]jira.Issue, error) {
-	rows, err := db.Query("SELECT * FROM ISSUES")
+	rows, err := db.Query("SELECT * FROM ISSUE;")
 	if err != nil {
 		return nil, err
 	}
@@ -61,15 +60,15 @@ func (db *JiraDatabase) InsertIssues(project string, issues []jira.Issue) error 
 	var errs string
 	for _, issue := range issues {
 		errs := ""
-		_, err := db.Exec("INSERT INTO issue VALUES ($1, $2, $3, $4, $5, $6, $7);",
+		_, err := db.Exec("INSERT INTO issue VALUES ($1, $2, $3, $4, $5, $6, $7, $8);",
 			issue.Key,
 			issue.Fields.Summary,
 			issue.Fields.Description,
 			issue.Fields.TimeSpent,
 			issue.Fields.TimeEstimate,
-			issue.Fields.DueDate,
+			issue.Fields.DueDate.Time.Format(time.RFC3339),
 			project,
-			issue.Fields.Created,
+			issue.Fields.Created.Time.Format(time.RFC3339),
 		)
 		if err != nil {
 			errs += fmt.Sprintf("Could not insert issue %s: %s\n", issue.Key, err.Error())
@@ -108,8 +107,8 @@ func insertComments(db *JiraDatabase, issueKey string, comments []jira.Comment) 
 			comment.ID,
 			issueKey,
 			comment.Body,
-			comment.Created,
-			comment.Updated,
+			comment.Created.Time.Format(time.RFC3339),
+			comment.Updated.Time.Format(time.RFC3339),
 		)
 		if err != nil {
 			errs += fmt.Sprintf("%s\n", err.Error())
@@ -172,7 +171,7 @@ func insertChangelog(db *JiraDatabase, issueKey string, changelog jira.Changelog
 		_, err := db.Exec("INSERT INTO changelog_history VALUES ($1, $2, $3);",
 			history.ID,
 			issueKey,
-			history.Created,
+			history.Created.Time.Format(time.RFC3339),
 		)
 		if err != nil {
 			errs += fmt.Sprintf("%s\n", err.Error())
