@@ -54,13 +54,13 @@ func main() {
 		}
 	}
 
-	log.Println("finished getting the issues from Jira")
+	log.Printf("finished getting the issues from Jira; number of issues: %v\n", len(issues))
 
 	database, err := db.NewJiraDatabase()
 	if err != nil {
 		log.Fatalf("Could not create database: %v", err)
 	}
-	err = database.AddIssues(issues)
+	err = database.InsertIssues(issues)
 	if err != nil {
 		log.Fatalf("Could not add issue to database: %v", err)
 	}
