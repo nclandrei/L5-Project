@@ -57,19 +57,20 @@ func (db *JiraDatabase) GetIssues() ([]jira.Issue, error) {
 }
 
 // InsertIssues inserts a slice of issues into the issues table
-func (db *JiraDatabase) InsertIssues(issues []jira.Issue) error {
+func (db *JiraDatabase) InsertIssues(project string, issues []jira.Issue) error {
 	var errs string
 	issueCh := make(chan string, len(issues))
 	for _, issue := range issues {
 		go func(issue jira.Issue, issueCh chan string) {
 			errs := ""
-			_, err := db.Exec("INSERT INTO issue VALUES ($1, $2, $3, $4, $5, $6);",
+			_, err := db.Exec("INSERT INTO issue VALUES ($1, $2, $3, $4, $5, $6, $7);",
 				issue.Key,
 				issue.Fields.Summary,
 				issue.Fields.Description,
 				issue.Fields.TimeSpent,
 				issue.Fields.TimeEstimate,
 				issue.Fields.DueDate,
+				project,
 			)
 			if err != nil {
 				errs += fmt.Sprintf("Could not insert issue %s: %s\n", issue.Key, err.Error())

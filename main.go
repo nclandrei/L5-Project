@@ -64,7 +64,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Could not create database: %v", err)
 	}
-	err = database.InsertIssues(issues)
+	err = database.InsertIssues(*projectName, issues)
 	if err != nil {
 		log.Fatalf("Could not add issue to database: %v", err)
 	}
