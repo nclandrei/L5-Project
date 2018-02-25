@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"github.com/nclandrei/L5-Project/db"
 	"github.com/nclandrei/L5-Project/jira"
 	"log"
@@ -41,8 +40,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("Could not get total number of issues: %v\n", err)
 	}
-
-	fmt.Printf("total number of issues: %d", numberOfIssues)
 
 	issuesPerPage := math.Ceil(float64(numberOfIssues) / float64(*goroutinesCount))
 
