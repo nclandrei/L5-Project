@@ -11,7 +11,7 @@ import (
 const (
 	connection   = "user=nclandrei password=nclandrei dbname=nclandrei sslmode=disable"
 	databaseType = "postgres"
-	timeFormat   = "2006-01-02 15:04:05 MST"
+	pgTimeFormat = "2006-01-02 15:04:05 MST"
 )
 
 // JiraDatabase defines the jira database
@@ -67,9 +67,9 @@ func (db *JiraDatabase) InsertIssues(project string, issues []jira.Issue) error 
 			issue.Fields.Description,
 			issue.Fields.TimeSpent,
 			issue.Fields.TimeEstimate,
-			time.Time(issue.Fields.DueDate).UTC().Format(timeFormat),
+			time.Time(issue.Fields.DueDate).UTC().Format(pgTimeFormat),
 			project,
-			time.Time(issue.Fields.Created).UTC().Format(timeFormat),
+			time.Time(issue.Fields.Created).UTC().Format(pgTimeFormat),
 			jira.CalculateNumberOfWords(issue.Fields.Description),
 			jira.CalculateNumberOfWords(issue.Fields.Summary),
 		)
@@ -90,7 +90,7 @@ func (db *JiraDatabase) InsertIssues(project string, issues []jira.Issue) error 
 		}
 		err = insertAttachments(db, issue.Key, issue.Fields.Attachments)
 		if err != nil {
-			errs += fmt.Sprintf("Could not insert comments for issue %s: %s\n", issue.Key, err.Error())
+			errs += fmt.Sprintf("Could not insert attachments for issue %s: %s\n", issue.Key, err.Error())
 		}
 		err = insertStatus(db, issue.Key, issue.Fields.Status)
 		if err != nil {
@@ -114,8 +114,8 @@ func insertComments(db *JiraDatabase, issueKey string, comments []jira.Comment) 
 			comment.ID,
 			issueKey,
 			comment.Body,
-			time.Time(comment.Created).UTC().Format(timeFormat),
-			time.Time(comment.Updated).UTC().Format(timeFormat),
+			time.Time(comment.Created).UTC().Format(pgTimeFormat),
+			time.Time(comment.Updated).UTC().Format(pgTimeFormat),
 			jira.CalculateNumberOfWords(comment.Body),
 		)
 		if err != nil {
@@ -139,27 +139,27 @@ func insertComments(db *JiraDatabase, issueKey string, comments []jira.Comment) 
 func insertAttachments(db *JiraDatabase, issueKey string, attachments []jira.Attachment) error {
 	errs := ""
 	for _, attachment := range attachments {
-		_, err := db.Exec("INSERT INTO attachment VALUES ($1, $2, $3, $4, $5, $6);",
+		_, err := db.Exec("INSERT INTO attachment VALUES ($1, $2, $3, $4, $5, $6, $7, $8);",
 			attachment.ID,
 			issueKey,
-			attachment.Content,
-			attachment.Created,
 			attachment.Filename,
-			attachment.MimeType,
+			time.Time(attachment.Created).UTC().Format(pgTimeFormat),
 			attachment.Size,
-			jira.GetAttachmentType(attachment.Filename),
+			attachment.MimeType,
+			attachment.Content,
+			int(jira.GetAttachmentType(attachment.Filename)),
 		)
 		if err != nil {
 			errs += fmt.Sprintf("%s\n", err.Error())
 		}
 		_, err = db.Exec("INSERT INTO attachment_author VALUES ($1, $2, $3, $4, $5, $6, $7);",
 			attachment.ID,
+			issueKey,
 			attachment.Author.Name,
 			attachment.Author.Email,
 			attachment.Author.DisplayName,
 			attachment.Author.Active,
 			attachment.Author.TimeZone,
-			issueKey,
 		)
 		if err != nil {
 			errs += fmt.Sprintf("%s\n", err.Error())
@@ -216,7 +216,7 @@ func insertChangelog(db *JiraDatabase, issueCreatedTS time.Time, issueKey string
 		_, err := db.Exec("INSERT INTO changelog_history VALUES ($1, $2, $3, $4);",
 			history.ID,
 			issueKey,
-			changelogCreatedTS.Format(timeFormat),
+			changelogCreatedTS.Format(pgTimeFormat),
 			jira.CalculateJTimeDifference(changelogCreatedTS, issueCreatedTS),
 		)
 		if err != nil {
