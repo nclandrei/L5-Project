@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
@@ -52,10 +53,21 @@ func NewClient(url *url.URL) (*Client, error) {
 		return nil, err
 	}
 
+	// as we are using concurrent requests, increasing TLSHandshake timeout
+	// will most likely avoid errors on the connection
+	transport := &http.Transport{
+		Dial: (&net.Dialer{
+			Timeout:   60 * time.Second,
+			KeepAlive: 30 * time.Second,
+		}).Dial,
+		TLSHandshakeTimeout: 45 * time.Second,
+	}
+
 	return &Client{
 		Client: &http.Client{
-			Timeout: time.Second * 90,
-			Jar:     cookieJar,
+			Timeout:   time.Second * 90,
+			Jar:       cookieJar,
+			Transport: transport,
 		},
 		URL: url,
 	}, nil
@@ -88,7 +100,7 @@ func (client *Client) setSearchPath(projectName string, paginationIndex, pageCou
 	queryValues.Add("jql", fmt.Sprintf("project=%s", projectName))
 	queryValues.Add("startAt", strconv.Itoa(paginationIndex*pageCount))
 	queryValues.Add("maxResults", strconv.Itoa(pageCount))
-	queryValues.Add("fields", "summary, description, comment, key, issuetype, timespent, priority, timeestimate, status, duedate, progress")
+	queryValues.Add("fields", "summary, created, description, comment, key, issuetype, timespent, priority, timeestimate, status, duedate, progress")
 	queryValues.Add("expand", "changelog")
 	client.URL.RawQuery = queryValues.Encode()
 }
@@ -144,9 +156,8 @@ func (client *Client) GetPaginatedIssues(
 	} else {
 		defer resp.Body.Close()
 		if resp.StatusCode == http.StatusOK {
-			bodyBytes, _ := ioutil.ReadAll(resp.Body)
 			var searchResponse SearchResponse
-			if err := json.Unmarshal(bodyBytes, &searchResponse); err != nil {
+			if err := json.NewDecoder(resp.Body).Decode(&searchResponse); err != nil {
 				errs <- err
 				responses <- nil
 			} else {
