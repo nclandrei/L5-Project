@@ -132,3 +132,18 @@ type Comment struct {
 type CommentAuthor struct {
 	Name string `json:"name,omitempty"`
 }
+
+// CalculateJTimeDifference calculates the duration in hours between 2 different timestamps
+func CalculateJTimeDifference(t1, t2 JTime) float64 {
+	return time.Time(t1).Sub(time.Time(t2)).Hours()
+}
+
+// CalculateNumberOfWords returns the number of words in a string
+func CalculateNumberOfWords(s string) int {
+	wordCount := 0
+	lines := strings.Split(s, "\n")
+	for _, line := range lines {
+		wordCount += len(strings.Split(strings.TrimSpace(line), " "))
+	}
+	return wordCount
+}
