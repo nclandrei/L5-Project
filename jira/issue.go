@@ -1,47 +1,58 @@
 package jira
 
 import (
+	"fmt"
 	"strings"
 	"time"
 )
 
-// Time holds the time formatted in Jira's specific format
-type Time struct {
-	Time time.Time
-}
+// JTime holds the time formatted in Jira's specific format
+type JTime time.Time
 
 // UnmarshalJSON represents the formatting of JSON time for Jira's specific format
-func (t *Time) UnmarshalJSON(b []byte) error {
+func (t *JTime) UnmarshalJSON(b []byte) error {
 	s := strings.Trim(string(b), "\"")
-	if s == "null" || s == "" {
-		t.Time = time.Time{}
+
+	if s == "null" {
+		*t = JTime(time.Time{})
 		return nil
 	}
+
 	jiraTime, err := time.Parse("2006-01-02T15:04:05.000-0700", s)
-	if err == nil {
-		t.Time = jiraTime
-	} else {
-		t.Time, err = time.Parse("2006-01-02", s)
+	if err != nil {
+		return err
 	}
-	return err
+
+	*t = JTime(jiraTime)
+
+	return nil
+}
+
+// MarshalJSON marshals a JiraTime struct into a slice of bytes
+func (t JTime) MarshalJSON() ([]byte, error) {
+	jTime := fmt.Sprintf("\"%s\"", time.Time(t))
+	return []byte(jTime), nil
 }
 
 // Issue defines the Jira issue retrieved via the REST API
 type Issue struct {
-	Key       string    `json:"key,omitempty"`
-	Fields    Fields    `json:"fields,omitempty"`
-	Changelog Changelog `json:"changelog,omitempty"`
+	Expand    string    `json:"_"`
+	ID        string    `json:"-"`
+	Self      string    `json:"-"`
+	Key       string    `json:"key"`
+	Fields    Fields    `json:"fields"`
+	Changelog Changelog `json:"changelog"`
 }
 
 // Fields defines the fields retrieved via the REST API
 type Fields struct {
-	Summary      string    `json:"summary,omitempty"`
+	Summary      string    `json:"summary"`
 	Description  string    `json:"description,omitempty"`
 	TimeEstimate int       `json:"timeestimate,omitempty"`
 	TimeSpent    int       `json:"timespent,omitempty"`
-	Created      Time      `json:"created,omitempty"`
+	Created      JTime     `json:"created"`
 	Status       Status    `json:"status,omitempty"`
-	DueDate      Time      `json:"duedate,omitempty"`
+	DueDate      JTime     `json:"duedate,omitempty"`
 	Comments     Comments  `json:"comment,omitempty"`
 	Priority     Priority  `json:"priority,omitempty"`
 	IssueType    IssueType `json:"issuetype,omitempty"`
@@ -49,9 +60,9 @@ type Fields struct {
 
 // Changelog defines the entire changelog of a Jira issue
 type Changelog struct {
-	StartAt    int                `json:"startAt,omitempty"`
-	MaxResults int                `json:"maxResults,omitempty"`
-	Total      int                `json:"total,omitempty"`
+	StartAt    int                `json:"startAt"`
+	MaxResults int                `json:"maxResults"`
+	Total      int                `json:"total"`
 	Histories  []ChangelogHistory `json:"histories,omitempty"`
 }
 
@@ -59,7 +70,7 @@ type Changelog struct {
 type ChangelogHistory struct {
 	ID      string                 `json:"id,omitempty"`
 	Author  ChangelogHistoryAuthor `json:"author,omitempty"`
-	Created Time                   `json:"created,omitempty"`
+	Created JTime                  `json:"created,omitempty"`
 	Items   []ChangelogHistoryItem `json:"items,omitempty"`
 }
 
@@ -113,8 +124,8 @@ type Comment struct {
 	ID      string        `json:"id,omitempty"`
 	Body    string        `json:"body,omitempty"`
 	Author  CommentAuthor `json:"author"`
-	Created Time          `json:"created,omitempty"`
-	Updated Time          `json:"updated,omitempty"`
+	Created JTime         `json:"created,omitempty"`
+	Updated JTime         `json:"updated,omitempty"`
 }
 
 // CommentAuthor holds the name of a comment's author
