@@ -5,11 +5,13 @@ import (
 	"fmt"
 	_ "github.com/lib/pq" // driver required for comminucating with postgres DB
 	"github.com/nclandrei/L5-Project/jira"
+	"time"
 )
 
 const (
 	connection   = "user=nclandrei password=nclandrei dbname=nclandrei sslmode=disable"
 	databaseType = "postgres"
+	timeFormat   = "2006-01-02 15:04:05 MST"
 )
 
 // JiraDatabase defines the jira database
@@ -65,9 +67,9 @@ func (db *JiraDatabase) InsertIssues(project string, issues []jira.Issue) error 
 			issue.Fields.Description,
 			issue.Fields.TimeSpent,
 			issue.Fields.TimeEstimate,
-			issue.Fields.DueDate.Time.UTC().Format("2006-01-02 15:04:05 MST"),
+			time.Time(issue.Fields.DueDate).UTC().Format(timeFormat),
 			project,
-			issue.Fields.Created.Time.UTC().Format("2006-01-02 15:04:05 MST"),
+			time.Time(issue.Fields.Created).UTC().Format(timeFormat),
 		)
 		if err != nil {
 			errs += fmt.Sprintf("Could not insert issue %s: %s\n", issue.Key, err.Error())
@@ -106,8 +108,8 @@ func insertComments(db *JiraDatabase, issueKey string, comments []jira.Comment) 
 			comment.ID,
 			issueKey,
 			comment.Body,
-			comment.Created.Time.UTC().Format("2006-01-02 15:04:05 MST"),
-			comment.Updated.Time.UTC().Format("2006-01-02 15:04:05 MST"),
+			time.Time(comment.Created).UTC().Format(timeFormat),
+			time.Time(comment.Updated).UTC().Format(timeFormat),
 		)
 		if err != nil {
 			errs += fmt.Sprintf("%s\n", err.Error())
@@ -171,7 +173,7 @@ func insertChangelog(db *JiraDatabase, issueKey string, changelog jira.Changelog
 		_, err := db.Exec("INSERT INTO changelog_history VALUES ($1, $2, $3);",
 			history.ID,
 			issueKey,
-			history.Created.Time.UTC().Format("2006-01-02 15:04:05 MST"),
+			time.Time(history.Created).UTC().Format(timeFormat),
 		)
 		if err != nil {
 			errs += fmt.Sprintf("%s\n", err.Error())
