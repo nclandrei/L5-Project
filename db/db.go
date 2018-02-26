@@ -62,7 +62,7 @@ func (db *JiraDatabase) InsertIssues(project string, issues []jira.Issue) error 
 	var errs string
 	for _, issue := range issues {
 		errs := ""
-		_, err := db.Exec("INSERT INTO issue VALUES ($1, $2, $3, $4, $5, $6, $7, $8);",
+		_, err := db.Exec("INSERT INTO issue VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10);",
 			issue.Key,
 			issue.Fields.Summary,
 			issue.Fields.Description,
@@ -107,7 +107,7 @@ func (db *JiraDatabase) InsertIssues(project string, issues []jira.Issue) error 
 func insertComments(db *JiraDatabase, issueKey string, comments []jira.Comment) error {
 	errs := ""
 	for _, comment := range comments {
-		_, err := db.Exec("INSERT INTO comment VALUES ($1, $2, $3, $4, $5);",
+		_, err := db.Exec("INSERT INTO comment VALUES ($1, $2, $3, $4, $5, $6);",
 			comment.ID,
 			issueKey,
 			comment.Body,
@@ -175,7 +175,7 @@ func insertChangelog(db *JiraDatabase, issueCreatedTS time.Time, issueKey string
 	errs := ""
 	for _, history := range changelog.Histories {
 		changelogCreatedTS := time.Time(history.Created).UTC()
-		_, err := db.Exec("INSERT INTO changelog_history VALUES ($1, $2, $3);",
+		_, err := db.Exec("INSERT INTO changelog_history VALUES ($1, $2, $3, $4);",
 			history.ID,
 			issueKey,
 			changelogCreatedTS.Format(timeFormat),
