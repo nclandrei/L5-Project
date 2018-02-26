@@ -5,7 +5,6 @@ import (
 	"fmt"
 	_ "github.com/lib/pq" // driver required for comminucating with postgres DB
 	"github.com/nclandrei/L5-Project/jira"
-	"strings"
 	"time"
 )
 
@@ -71,8 +70,8 @@ func (db *JiraDatabase) InsertIssues(project string, issues []jira.Issue) error 
 			time.Time(issue.Fields.DueDate).UTC().Format(timeFormat),
 			project,
 			time.Time(issue.Fields.Created).UTC().Format(timeFormat),
-			calculateNumberOfWords(issue.Fields.Description),
-			calculateNumberOfWords(issue.Fields.Summary),
+			jira.CalculateNumberOfWords(issue.Fields.Description),
+			jira.CalculateNumberOfWords(issue.Fields.Summary),
 		)
 		if err != nil {
 			errs += fmt.Sprintf("Could not insert issue %s: %s\n", issue.Key, err.Error())
@@ -86,6 +85,10 @@ func (db *JiraDatabase) InsertIssues(project string, issues []jira.Issue) error 
 			errs += fmt.Sprintf("Could not insert issue type for issue %s: %s\n", issue.Key, err.Error())
 		}
 		err = insertComments(db, issue.Key, issue.Fields.Comments.Comments)
+		if err != nil {
+			errs += fmt.Sprintf("Could not insert comments for issue %s: %s\n", issue.Key, err.Error())
+		}
+		err = insertAttachments(db, issue.Key, issue.Fields.Attachments)
 		if err != nil {
 			errs += fmt.Sprintf("Could not insert comments for issue %s: %s\n", issue.Key, err.Error())
 		}
@@ -113,7 +116,7 @@ func insertComments(db *JiraDatabase, issueKey string, comments []jira.Comment) 
 			comment.Body,
 			time.Time(comment.Created).UTC().Format(timeFormat),
 			time.Time(comment.Updated).UTC().Format(timeFormat),
-			calculateNumberOfWords(comment.Body),
+			jira.CalculateNumberOfWords(comment.Body),
 		)
 		if err != nil {
 			errs += fmt.Sprintf("%s\n", err.Error())
@@ -122,6 +125,41 @@ func insertComments(db *JiraDatabase, issueKey string, comments []jira.Comment) 
 			comment.ID,
 			issueKey,
 			comment.Author.Name,
+		)
+		if err != nil {
+			errs += fmt.Sprintf("%s\n", err.Error())
+		}
+	}
+	if errs != "" {
+		return fmt.Errorf(errs)
+	}
+	return nil
+}
+
+func insertAttachments(db *JiraDatabase, issueKey string, attachments []jira.Attachment) error {
+	errs := ""
+	for _, attachment := range attachments {
+		_, err := db.Exec("INSERT INTO attachment VALUES ($1, $2, $3, $4, $5, $6);",
+			attachment.ID,
+			issueKey,
+			attachment.Content,
+			attachment.Created,
+			attachment.Filename,
+			attachment.MimeType,
+			attachment.Size,
+			jira.GetAttachmentType(attachment.Filename),
+		)
+		if err != nil {
+			errs += fmt.Sprintf("%s\n", err.Error())
+		}
+		_, err = db.Exec("INSERT INTO attachment_author VALUES ($1, $2, $3, $4, $5, $6, $7);",
+			attachment.ID,
+			attachment.Author.Name,
+			attachment.Author.Email,
+			attachment.Author.DisplayName,
+			attachment.Author.Active,
+			attachment.Author.TimeZone,
+			issueKey,
 		)
 		if err != nil {
 			errs += fmt.Sprintf("%s\n", err.Error())
@@ -179,7 +217,7 @@ func insertChangelog(db *JiraDatabase, issueCreatedTS time.Time, issueKey string
 			history.ID,
 			issueKey,
 			changelogCreatedTS.Format(timeFormat),
-			calculateJTimeDifference(changelogCreatedTS, issueCreatedTS),
+			jira.CalculateJTimeDifference(changelogCreatedTS, issueCreatedTS),
 		)
 		if err != nil {
 			errs += fmt.Sprintf("%s\n", err.Error())
@@ -216,19 +254,4 @@ func insertChangelog(db *JiraDatabase, issueCreatedTS time.Time, issueKey string
 		return fmt.Errorf(errs)
 	}
 	return nil
-}
-
-// calculateJTimeDifference calculates the duration in hours between 2 different timestamps
-func calculateJTimeDifference(t1, t2 time.Time) float64 {
-	return t1.Sub(t2).Hours()
-}
-
-// calculateNumberOfWords returns the number of words in a string
-func calculateNumberOfWords(s string) int {
-	wordCount := 0
-	lines := strings.Split(s, "\n")
-	for _, line := range lines {
-		wordCount += len(strings.Split(strings.TrimSpace(line), " "))
-	}
-	return wordCount
 }
