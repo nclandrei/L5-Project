@@ -174,7 +174,8 @@ func CalculateNumberOfWords(s string) int {
 
 // GetAttachmentType returns the attachment type based on the file extension
 func GetAttachmentType(filename string) AttachmentType {
-	ext := filename[strings.LastIndex(filename, "."):]
+	extIndex := strings.LastIndex(filename, ".")
+	ext := filename[(extIndex + 1):]
 	switch ext {
 	case "md":
 		return Text
