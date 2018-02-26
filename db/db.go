@@ -5,6 +5,7 @@ import (
 	"fmt"
 	_ "github.com/lib/pq" // driver required for comminucating with postgres DB
 	"github.com/nclandrei/L5-Project/jira"
+	"strings"
 	"time"
 )
 
@@ -70,6 +71,8 @@ func (db *JiraDatabase) InsertIssues(project string, issues []jira.Issue) error 
 			time.Time(issue.Fields.DueDate).UTC().Format(timeFormat),
 			project,
 			time.Time(issue.Fields.Created).UTC().Format(timeFormat),
+			calculateNumberOfWords(issue.Fields.Description),
+			calculateNumberOfWords(issue.Fields.Summary),
 		)
 		if err != nil {
 			errs += fmt.Sprintf("Could not insert issue %s: %s\n", issue.Key, err.Error())
@@ -90,7 +93,7 @@ func (db *JiraDatabase) InsertIssues(project string, issues []jira.Issue) error 
 		if err != nil {
 			errs += fmt.Sprintf("Could not insert status for issue %s: %s\n", issue.Key, err.Error())
 		}
-		err = insertChangelog(db, issue.Key, issue.Changelog)
+		err = insertChangelog(db, time.Time(issue.Fields.Created), issue.Key, issue.Changelog)
 		if err != nil {
 			errs += fmt.Sprintf("Could not insert changelog for issue %s: %s\n", issue.Key, err.Error())
 		}
@@ -110,6 +113,7 @@ func insertComments(db *JiraDatabase, issueKey string, comments []jira.Comment) 
 			comment.Body,
 			time.Time(comment.Created).UTC().Format(timeFormat),
 			time.Time(comment.Updated).UTC().Format(timeFormat),
+			calculateNumberOfWords(comment.Body),
 		)
 		if err != nil {
 			errs += fmt.Sprintf("%s\n", err.Error())
@@ -167,13 +171,15 @@ func insertStatus(db *JiraDatabase, issueKey string, status jira.Status) error {
 	return nil
 }
 
-func insertChangelog(db *JiraDatabase, issueKey string, changelog jira.Changelog) error {
+func insertChangelog(db *JiraDatabase, issueCreatedTS time.Time, issueKey string, changelog jira.Changelog) error {
 	errs := ""
 	for _, history := range changelog.Histories {
+		changelogCreatedTS := time.Time(history.Created).UTC()
 		_, err := db.Exec("INSERT INTO changelog_history VALUES ($1, $2, $3);",
 			history.ID,
 			issueKey,
-			time.Time(history.Created).UTC().Format(timeFormat),
+			changelogCreatedTS.Format(timeFormat),
+			calculateJTimeDifference(changelogCreatedTS, issueCreatedTS),
 		)
 		if err != nil {
 			errs += fmt.Sprintf("%s\n", err.Error())
@@ -210,4 +216,19 @@ func insertChangelog(db *JiraDatabase, issueKey string, changelog jira.Changelog
 		return fmt.Errorf(errs)
 	}
 	return nil
+}
+
+// calculateJTimeDifference calculates the duration in hours between 2 different timestamps
+func calculateJTimeDifference(t1, t2 time.Time) float64 {
+	return t1.Sub(t2).Hours()
+}
+
+// calculateNumberOfWords returns the number of words in a string
+func calculateNumberOfWords(s string) int {
+	wordCount := 0
+	lines := strings.Split(s, "\n")
+	for _, line := range lines {
+		wordCount += len(strings.Split(strings.TrimSpace(line), " "))
+	}
+	return wordCount
 }
