@@ -4,7 +4,10 @@ import (
 	"flag"
 	"github.com/nclandrei/L5-Project/db"
 	"github.com/nclandrei/L5-Project/jira"
-	"github.com/nclandrei/L5-Project/processing"
+	"sync"
+	// "github.com/nclandrei/L5-Project/plot"
+	// "io/ioutil"
+	// "github.com/nclandrei/L5-Project/processing"
 	"log"
 	"math"
 	"net/url"
@@ -59,24 +62,73 @@ func main() {
 			}
 		}
 		if err := <-errs; err != nil {
-			log.Printf("Error while retrieving paginated issues: %v\n", err)
+			log.Printf("could not issues: %v\n", err)
 		}
 	}
 
 	log.Printf("finished getting the issues from Jira; number of issues: %v\n", len(issues))
 
-	database, err := db.NewJiraDatabase()
+	// database, err := db.NewJiraDatabase()
+	// if err != nil {
+	// 	log.Fatalf("could not create database: %v", err)
+	// }
+	// err = database.InsertIssues(*projectName, issues)
+	// if err != nil {
+	// 	log.Fatalf("could not add issue to database: %v", err)
+	// }
+
+	// withAtchQuery, err := ioutil.ReadFile("resources/with_attachments.sql")
+	// if err != nil {
+	// 	log.Fatalf("could not read file: %v\n", err)
+	// }
+
+	// dbIssues, err := database.ExecuteQuery(string(withAtchQuery))
+	// if err != nil {
+	// 	log.Fatalf("could not retrieve issues from querying database: %v\n", err)
+	// }
+
+	// log.Printf("%v\n", dbIssues)
+
+	// withoutAtchQuery, err := ioutil.ReadFile("resources/without_attachments.sql")
+	// if err != nil {
+	// 	log.Fatalf("could not read file: %v\n", err)
+	// }
+
+	// dbIssues, err = database.ExecuteQuery(string(withoutAtchQuery))
+	// if err != nil {
+	// 	log.Fatalf("could not retrieve issues from querying database: %v\n", err)
+	// }
+
+	// log.Printf("%v\n", dbIssues)
+
+	db, err := db.NewDatabase("localhost", "nclandrei", "issues")
 	if err != nil {
-		log.Fatalf("Could not create database: %v", err)
-	}
-	err = database.InsertIssues(*projectName, issues)
-	if err != nil {
-		log.Fatalf("Could not add issue to database: %v", err)
+		log.Fatalf("could not retrieve mongo session: %v\n", err)
 	}
 
-	sentiment, err := processing.SentimentScoreFromDoc("this is a damn test")
-	if err != nil {
-		log.Fatalf("Could not get sentiment: %s\n", err)
+	defer db.Session.Close()
+
+	var wg sync.WaitGroup
+
+	for i := 0; i < 1000; i++ {
+		wg.Add(1)
+		go func(i jira.Issue) {
+			defer wg.Done()
+			err := db.InsertIssue(i)
+			if err != nil {
+				log.Printf("could not insert issue: %v\n", err)
+			}
+		}(issues[i])
 	}
-	log.Printf("sentiment score: %f\n", sentiment)
+
+	wg.Wait()
+
+	// plotter, err := plot.NewPlotter()
+	// if err != nil {
+	// 	log.Fatalf("could not create plotter: %s\n", err)
+	// }
+	// err = plotter.Draw("Attachments", "Time-To-Completion", "#Attachments", nil)
+	// if err != nil {
+	// 	log.Printf("could not draw points inside plotter: %v\n", err)
+	// }
 }
