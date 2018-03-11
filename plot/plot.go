@@ -1,6 +1,7 @@
 package plot
 
 import (
+	"fmt"
 	"gonum.org/v1/plot"
 	"gonum.org/v1/plot/plotter"
 	"gonum.org/v1/plot/plotutil"
@@ -8,28 +9,28 @@ import (
 	"math/rand"
 )
 
+// JiraPlotter defines the plotter we use throughout the project
+type JiraPlotter plot.Plot
+
 // NewPlotter returns a new plot.Plotter
-func NewPlotter() (*plot.Plot, error) {
+func NewPlotter() (*JiraPlotter, error) {
 	p, err := plot.New()
-	return p, err
+	return (*JiraPlotter)(p), err
 }
 
 // Draw computes a plot given a slice of XY points
-func (p *plot.Plot) Draw(plotName, xLabel, yLabel string, pointSlice ...plotter.XYs) error {
+func (p *JiraPlotter) Draw(plotName, xLabel, yLabel string, pointSlice ...plotter.XYs) error {
 	p.Title.Text = plotName
 	p.X.Label.Text = xLabel
 	p.Y.Label.Text = yLabel
 
-	err := plotutil.AddLinePoints(p,
-		"First", randomPoints(15),
-		"Second", randomPoints(15),
-		"Third", randomPoints(15))
+	err := plotutil.AddLinePoints((*plot.Plot)(p), pointSlice)
 	if err != nil {
 		return err
 	}
 
 	// Save the plot to a PNG file.
-	return p.Save(4*vg.Inch, 4*vg.Inch, "points.png")
+	return (*plot.Plot)(p).Save(4*vg.Inch, 4*vg.Inch, fmt.Sprintf("%s.png", plotName))
 }
 
 // randomPoints returns some random x, y points.
