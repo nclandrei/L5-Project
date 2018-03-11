@@ -30,14 +30,14 @@ func NewJiraDatabase() (*JiraDatabase, error) {
 	}, nil
 }
 
-// GetIssues reads from the issues database and retrieves the issues as bytes
-func (db *JiraDatabase) GetIssues(query string) ([]jira.Issue, error) {
-	rows, err := db.Query("SELECT * FROM ISSUE;")
+// ExecuteQuery reads from the issues database and retrieves the results as slice of bytes
+func (db *JiraDatabase) ExecuteQuery(query string) ([]jira.Issue, error) {
+	rows, err := db.Query(query)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var issues []jira.Issue
+	var results []jira.Issue
 	for i := 0; rows.Next(); i++ {
 		issue := new(jira.Issue)
 		err = rows.Scan(
@@ -51,9 +51,9 @@ func (db *JiraDatabase) GetIssues(query string) ([]jira.Issue, error) {
 		if err != nil {
 			return nil, err
 		}
-		issues = append(issues, *issue)
+		results = append(results, *issue)
 	}
-	return issues, nil
+	return results, nil
 }
 
 // InsertIssues inserts a slice of issues into the issues table
