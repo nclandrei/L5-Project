@@ -4,6 +4,7 @@ import (
 	"flag"
 	"github.com/nclandrei/L5-Project/db"
 	"github.com/nclandrei/L5-Project/jira"
+	"github.com/nclandrei/L5-Project/processing"
 	"log"
 	"math"
 	"net/url"
@@ -72,4 +73,10 @@ func main() {
 	if err != nil {
 		log.Fatalf("Could not add issue to database: %v", err)
 	}
+
+	sentiment, err := processing.SentimentScoreFromDoc("this is a damn test")
+	if err != nil {
+		log.Fatalf("Could not get sentiment: %s\n", err)
+	}
+	log.Printf("sentiment score: %f\n", sentiment)
 }
