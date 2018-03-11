@@ -16,8 +16,8 @@ import (
 
 // Client defines the client for Jira
 type Client struct {
-	URL *url.URL
 	*http.Client
+	URL *url.URL
 }
 
 // SearchResponse defines the response payload retrieved through the search endpoint
