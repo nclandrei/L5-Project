@@ -31,7 +31,7 @@ func NewJiraDatabase() (*JiraDatabase, error) {
 }
 
 // GetIssues reads from the issues database and retrieves the issues as bytes
-func (db *JiraDatabase) GetIssues() ([]jira.Issue, error) {
+func (db *JiraDatabase) GetIssues(query string) ([]jira.Issue, error) {
 	rows, err := db.Query("SELECT * FROM ISSUE;")
 	if err != nil {
 		return nil, err
