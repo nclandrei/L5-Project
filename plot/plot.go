@@ -10,12 +10,18 @@ import (
 )
 
 // JiraPlotter defines the plotter we use throughout the project
-type JiraPlotter plot.Plot
+type JiraPlotter struct {
+	*plot.Plot
+	path string
+}
 
 // NewPlotter returns a new plot.Plotter
 func NewPlotter() (*JiraPlotter, error) {
 	p, err := plot.New()
-	return (*JiraPlotter)(p), err
+	return &JiraPlotter{
+		Plot: p,
+		path: "resources/graphs",
+	}, err
 }
 
 // Draw computes a plot given a slice of XY points
@@ -24,13 +30,17 @@ func (p *JiraPlotter) Draw(plotName, xLabel, yLabel string, pointSlice ...plotte
 	p.X.Label.Text = xLabel
 	p.Y.Label.Text = yLabel
 
-	err := plotutil.AddLinePoints((*plot.Plot)(p), pointSlice)
+	err := plotutil.AddLinePoints(p.Plot,
+		"First", randomPoints(20),
+		"Second", randomPoints(20),
+		"Third", randomPoints(25),
+	)
 	if err != nil {
 		return err
 	}
 
 	// Save the plot to a PNG file.
-	return (*plot.Plot)(p).Save(4*vg.Inch, 4*vg.Inch, fmt.Sprintf("%s.png", plotName))
+	return p.Save(8*vg.Inch, 8*vg.Inch, fmt.Sprintf("%s/%s.png", p.path, plotName))
 }
 
 // randomPoints returns some random x, y points.
