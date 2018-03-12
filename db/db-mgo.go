@@ -1,8 +1,10 @@
 package db
 
 import (
-	"log"
+	"fmt"
 	"time"
+
+	"gopkg.in/mgo.v2/bson"
 
 	"github.com/nclandrei/L5-Project/jira"
 	"gopkg.in/mgo.v2"
@@ -17,8 +19,7 @@ type MgoSession struct {
 
 // NewDatabase returns a pointer to a Mongo Session
 func NewDatabase(url, dbName, collName string) (*MgoSession, error) {
-	session, err := mgo.DialWithTimeout(url, 60*time.Second)
-	session.SetPoolLimit(5000)
+	session, err := mgo.DialWithTimeout(url, 30*time.Second)
 	session.SetMode(mgo.Monotonic, true)
 	return &MgoSession{
 		Session:  session,
@@ -27,22 +28,23 @@ func NewDatabase(url, dbName, collName string) (*MgoSession, error) {
 	}, err
 }
 
-// InsertIssue inserts a given slice of issues inside the default collection (i.e. issues)
-func InsertIssue(errChan chan error, iChan chan []jira.Issue, session *mgo.Session) {
-	defer session.Close()
-	issues := <-iChan
-	log.Println("got inside db")
-	c := session.DB("nclandrei").C("issues")
+// InsertIssues inserts a given slice of issues inside the default collection (i.e. issues)
+func (db *MgoSession) InsertIssues(issues []jira.Issue) error {
+	sessCopy := db.Copy()
+	defer sessCopy.Close()
+	errs := ""
+	c := sessCopy.DB("nclandrei").C("issues")
 	for _, issue := range issues {
 		if err := c.Insert(issue); err != nil {
-			errChan <- err
+			errs += fmt.Sprintf("could not insert issue [%s]: %v\n", issue.Key, err)
 		}
 	}
+	return fmt.Errorf(errs)
 }
 
 // GetIssues returns a collection of issues from the database
-func (db *MgoSession) GetIssues(query string) ([]byte, error) {
-	var result []byte
+func (db *MgoSession) GetIssues(query bson.M) ([]jira.Issue, error) {
+	var result []jira.Issue
 	c := db.DB(db.dbName).C(db.collName)
 	if err := c.Find(query).All(result); err != nil {
 		return nil, err
