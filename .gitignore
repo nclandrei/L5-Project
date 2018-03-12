@@ -1,3 +1,7 @@
+### graphs and bolt DB ###
+resources/bolt/
+resources/graphs/
+
 ### Go ###
 # Binaries for programs and plugins
 *.exe
