@@ -25,7 +25,7 @@ func (t *JTime) UnmarshalJSON(b []byte) error {
 	if err != nil {
 		jiraTime, err = time.Parse("2006-01-02", s)
 		if err != nil {
-			return err
+			return fmt.Errorf("could not parse JTime: %v", err)
 		}
 	}
 
