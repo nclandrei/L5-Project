@@ -1,9 +1,11 @@
 package db
 
 import (
+	"log"
+	"time"
+
 	"github.com/nclandrei/L5-Project/jira"
 	"gopkg.in/mgo.v2"
-	"time"
 )
 
 // MgoSession defines the connection to the MongoDB
@@ -26,12 +28,16 @@ func NewDatabase(url, dbName, collName string) (*MgoSession, error) {
 }
 
 // InsertIssue inserts a given slice of issues inside the default collection (i.e. issues)
-func (db *MgoSession) InsertIssue(issue jira.Issue) error {
-	db.Refresh()
-	sessCopy := db.Session.Copy()
-	defer sessCopy.Close()
-	c := sessCopy.DB(db.dbName).C(db.collName)
-	return c.Insert(issue)
+func InsertIssue(errChan chan error, iChan chan []jira.Issue, session *mgo.Session) {
+	defer session.Close()
+	issues := <-iChan
+	log.Println("got inside db")
+	c := session.DB("nclandrei").C("issues")
+	for _, issue := range issues {
+		if err := c.Insert(issue); err != nil {
+			errChan <- err
+		}
+	}
 }
 
 // GetIssues returns a collection of issues from the database
