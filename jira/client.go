@@ -12,6 +12,8 @@ import (
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/nclandrei/L5-Project/db"
 )
 
 // Client defines the client for Jira
@@ -143,6 +145,7 @@ func (client *Client) AuthenticateClient() error {
 func (client *Client) GetPaginatedIssues(
 	responses chan<- *SearchResponse,
 	errs chan<- error,
+	boltDB *db.BoltDB,
 	paginationIndex int,
 	pageCount int,
 	projectName string) {
@@ -161,6 +164,7 @@ func (client *Client) GetPaginatedIssues(
 				errs <- err
 				responses <- nil
 			} else {
+				boltErr := boltDB.InsertIssues(searchResponse.Issues)
 				errs <- nil
 				responses <- &searchResponse
 			}
