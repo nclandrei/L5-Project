@@ -2,11 +2,12 @@ package plot
 
 import (
 	"fmt"
+	"math/rand"
+
 	"gonum.org/v1/plot"
 	"gonum.org/v1/plot/plotter"
 	"gonum.org/v1/plot/plotutil"
 	"gonum.org/v1/plot/vg"
-	"math/rand"
 )
 
 // JiraPlotter defines the plotter we use throughout the project
@@ -25,15 +26,14 @@ func NewPlotter() (*JiraPlotter, error) {
 }
 
 // Draw computes a plot given a slice of XY points
-func (p *JiraPlotter) Draw(plotName, xLabel, yLabel string, pointSlice ...plotter.XYs) error {
+func (p *JiraPlotter) Draw(plotName, xLabel, yLabel string, firstAxisSlice, secondAxisSlice []interface{}) error {
 	p.Title.Text = plotName
 	p.X.Label.Text = xLabel
 	p.Y.Label.Text = yLabel
 
 	err := plotutil.AddLinePoints(p.Plot,
-		"First", randomPoints(20),
-		"Second", randomPoints(20),
-		"Third", randomPoints(25),
+		"First", convertToPoints(firstAxisSlice),
+		"Second", convertToPoints(secondAxisSlice),
 	)
 	if err != nil {
 		return err
@@ -41,6 +41,10 @@ func (p *JiraPlotter) Draw(plotName, xLabel, yLabel string, pointSlice ...plotte
 
 	// Save the plot to a PNG file.
 	return p.Save(8*vg.Inch, 8*vg.Inch, fmt.Sprintf("%s/%s.png", p.path, plotName))
+}
+
+func convertToPoints(els []interface{}) plotter.XYs {
+	pts := make(plotter.XYs, len(els))
 }
 
 // randomPoints returns some random x, y points.
