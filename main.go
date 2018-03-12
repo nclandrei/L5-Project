@@ -2,9 +2,6 @@ package main
 
 import (
 	"flag"
-	"sync"
-
-	"gopkg.in/mgo.v2/bson"
 
 	"github.com/nclandrei/L5-Project/db"
 
@@ -75,33 +72,20 @@ func main() {
 
 	log.Printf("got %d issues\n", len(issues))
 
-	sliceSize := int(math.Ceil(float64(len(issues)) / float64(*goroutinesCount)))
-	mgoDB, err := db.NewDatabase("localhost", "nclandrei", "issues")
+	boltDB, err := db.NewBoltDB("users.db")
 	if err != nil {
-		log.Fatalf("could not open mongo database: %v\n", err)
+		log.Fatalf("could not create Bolt DB: %v\n", err)
 	}
 
-	var wg sync.WaitGroup
-
-	for i := 0; i < *goroutinesCount; i++ {
-		wg.Add(1)
-		go func(i int) {
-			defer wg.Done()
-			err := mgoDB.InsertIssues(issues[i*sliceSize : i*(sliceSize+1)])
-			if err != nil {
-				log.Println(err)
-			}
-		}(i)
+	err = boltDB.InsertIssues(issues)
+	if err != nil {
+		log.Fatalf("could not insert issues: %v\n", err)
 	}
-	wg.Wait()
 
-	mgoDB.GetIssues(bson.M{
-		"fields": {
-			"attachments": {
-				"$size": {
-					"$gt": 0,
-				},
-			},
-		},
-	})
+	dbIssues, err := boltDB.GetIssues()
+	if err != nil {
+		log.Fatalf("could not retrieve issues: %v\n", err)
+	}
+
+	log.Println(dbIssues)
 }
