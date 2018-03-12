@@ -72,7 +72,7 @@ func main() {
 
 	log.Printf("got %d issues\n", len(issues))
 
-	boltDB, err := db.NewBoltDB("users.db")
+	boltDB, err := db.NewBoltDB("resources/bolt/users.db")
 	if err != nil {
 		log.Fatalf("could not create Bolt DB: %v\n", err)
 	}
