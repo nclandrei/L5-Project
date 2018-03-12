@@ -2,11 +2,13 @@ package main
 
 import (
 	"flag"
+	"sync"
+
+	"gopkg.in/mgo.v2/bson"
 
 	"github.com/nclandrei/L5-Project/db"
+
 	"github.com/nclandrei/L5-Project/jira"
-	// "github.com/nclandrei/L5-Project/plot"
-	// "io/ioutil"
 	// "github.com/nclandrei/L5-Project/processing"
 	"log"
 	"math"
@@ -27,11 +29,6 @@ func main() {
 		log.Fatalf("cannot have more than maximum number of goroutines... exiting now")
 	}
 
-	mgoDB, err := db.NewDatabase("localhost", "nclandrei", "issues")
-	if err != nil {
-		log.Fatalf("could not retrieve mongo session: %v\n", err)
-	}
-
 	jiraClient, err := jira.NewClient(&url.URL{
 		Scheme: "http",
 		Host:   "issues.apache.org",
@@ -50,24 +47,21 @@ func main() {
 		log.Fatalf("Could not get total number of issues: %v\n", err)
 	}
 
-	issuesPerPage := math.Ceil(float64(numberOfIssues) / float64(*goroutinesCount))
+	issueSliceSize := math.Ceil(float64(numberOfIssues) / float64(*goroutinesCount))
 
 	done := make(chan *jira.SearchResponse, numberOfIssues)
 	errs := make(chan error, numberOfIssues)
-	dbChan := make(chan []jira.Issue)
-	dbErrChan := make(chan error)
+
 	var issues []jira.Issue
 
 	for i := 0; i < *goroutinesCount; i++ {
-		go jiraClient.GetPaginatedIssues(done, errs, i, int(issuesPerPage), *projectName)
-		go db.InsertIssue(dbErrChan, dbChan, mgoDB.Copy())
+		go jiraClient.GetPaginatedIssues(done, errs, i, int(issueSliceSize), *projectName)
 	}
 
 	for i := 0; i < 2*(*goroutinesCount); i++ {
 		select {
 		case searchResponse := <-done:
 			if searchResponse != nil {
-				dbChan <- searchResponse.Issues
 				for _, issue := range searchResponse.Issues {
 					issues = append(issues, issue)
 				}
@@ -76,55 +70,38 @@ func main() {
 			if err != nil {
 				log.Printf("could not retrieve issues: %v\n", err)
 			}
-
-		case err := <-dbErrChan:
-			if err != nil {
-				log.Printf("could not insert issue inside database: %v\n", err)
-			}
 		}
 	}
 
-	log.Printf("finished getting the issues from Jira; number of issues: %v\n", len(issues))
+	log.Printf("got %d issues\n", len(issues))
 
-	// database, err := db.NewJiraDatabase()
-	// if err != nil {
-	// 	log.Fatalf("could not create database: %v", err)
-	// }
-	// err = database.InsertIssues(*projectName, issues)
-	// if err != nil {
-	// 	log.Fatalf("could not add issue to database: %v", err)
-	// }
+	sliceSize := int(math.Ceil(float64(len(issues)) / float64(*goroutinesCount)))
+	mgoDB, err := db.NewDatabase("localhost", "nclandrei", "issues")
+	if err != nil {
+		log.Fatalf("could not open mongo database: %v\n", err)
+	}
 
-	// withAtchQuery, err := ioutil.ReadFile("resources/with_attachments.sql")
-	// if err != nil {
-	// 	log.Fatalf("could not read file: %v\n", err)
-	// }
+	var wg sync.WaitGroup
 
-	// dbIssues, err := database.ExecuteQuery(string(withAtchQuery))
-	// if err != nil {
-	// 	log.Fatalf("could not retrieve issues from querying database: %v\n", err)
-	// }
+	for i := 0; i < *goroutinesCount; i++ {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			err := mgoDB.InsertIssues(issues[i*sliceSize : i*(sliceSize+1)])
+			if err != nil {
+				log.Println(err)
+			}
+		}(i)
+	}
+	wg.Wait()
 
-	// log.Printf("%v\n", dbIssues)
-
-	// withoutAtchQuery, err := ioutil.ReadFile("resources/without_attachments.sql")
-	// if err != nil {
-	// 	log.Fatalf("could not read file: %v\n", err)
-	// }
-
-	// dbIssues, err = database.ExecuteQuery(string(withoutAtchQuery))
-	// if err != nil {
-	// 	log.Fatalf("could not retrieve issues from querying database: %v\n", err)
-	// }
-
-	// log.Printf("%v\n", dbIssues)
-
-	// plotter, err := plot.NewPlotter()
-	// if err != nil {
-	// 	log.Fatalf("could not create plotter: %s\n", err)
-	// }
-	// err = plotter.Draw("Attachments", "Time-To-Completion", "#Attachments", nil)
-	// if err != nil {
-	// 	log.Printf("could not draw points inside plotter: %v\n", err)
-	// }
+	mgoDB.GetIssues(bson.M{
+		"fields": {
+			"attachments": {
+				"$size": {
+					"$gt": 0,
+				},
+			},
+		},
+	})
 }
