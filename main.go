@@ -2,9 +2,9 @@ package main
 
 import (
 	"flag"
+
 	"github.com/nclandrei/L5-Project/db"
 	"github.com/nclandrei/L5-Project/jira"
-	"sync"
 	// "github.com/nclandrei/L5-Project/plot"
 	// "io/ioutil"
 	// "github.com/nclandrei/L5-Project/processing"
@@ -25,6 +25,11 @@ func main() {
 
 	if *goroutinesCount > maxNoGoroutines {
 		log.Fatalf("cannot have more than maximum number of goroutines... exiting now")
+	}
+
+	mgoDB, err := db.NewDatabase("localhost", "nclandrei", "issues")
+	if err != nil {
+		log.Fatalf("could not retrieve mongo session: %v\n", err)
 	}
 
 	jiraClient, err := jira.NewClient(&url.URL{
@@ -49,20 +54,33 @@ func main() {
 
 	done := make(chan *jira.SearchResponse, numberOfIssues)
 	errs := make(chan error, numberOfIssues)
+	dbChan := make(chan []jira.Issue)
+	dbErrChan := make(chan error)
 	var issues []jira.Issue
 
 	for i := 0; i < *goroutinesCount; i++ {
 		go jiraClient.GetPaginatedIssues(done, errs, i, int(issuesPerPage), *projectName)
+		go db.InsertIssue(dbErrChan, dbChan, mgoDB.Copy())
 	}
 
-	for i := 0; i < *goroutinesCount; i++ {
-		if searchResponse := <-done; searchResponse != nil {
-			for _, issue := range searchResponse.Issues {
-				issues = append(issues, issue)
+	for i := 0; i < 2*(*goroutinesCount); i++ {
+		select {
+		case searchResponse := <-done:
+			if searchResponse != nil {
+				dbChan <- searchResponse.Issues
+				for _, issue := range searchResponse.Issues {
+					issues = append(issues, issue)
+				}
 			}
-		}
-		if err := <-errs; err != nil {
-			log.Printf("could not issues: %v\n", err)
+		case err := <-errs:
+			if err != nil {
+				log.Printf("could not retrieve issues: %v\n", err)
+			}
+
+		case err := <-dbErrChan:
+			if err != nil {
+				log.Printf("could not insert issue inside database: %v\n", err)
+			}
 		}
 	}
 
@@ -100,28 +118,6 @@ func main() {
 	// }
 
 	// log.Printf("%v\n", dbIssues)
-
-	db, err := db.NewDatabase("localhost", "nclandrei", "issues")
-	if err != nil {
-		log.Fatalf("could not retrieve mongo session: %v\n", err)
-	}
-
-	defer db.Session.Close()
-
-	var wg sync.WaitGroup
-
-	for i := 0; i < 1000; i++ {
-		wg.Add(1)
-		go func(i jira.Issue) {
-			defer wg.Done()
-			err := db.InsertIssue(i)
-			if err != nil {
-				log.Printf("could not insert issue: %v\n", err)
-			}
-		}(issues[i])
-	}
-
-	wg.Wait()
 
 	// plotter, err := plot.NewPlotter()
 	// if err != nil {
