@@ -53,10 +53,10 @@ const (
 
 // Issue defines the Jira issue retrieved via the REST API
 type Issue struct {
+	Key       string    `json:"key" bson:"_id"`
 	Expand    string    `json:"_"`
 	ID        string    `json:"-"`
 	Self      string    `json:"-"`
-	Key       string    `json:"key"`
 	Fields    Fields    `json:"fields"`
 	Changelog Changelog `json:"changelog"`
 }
