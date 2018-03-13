@@ -27,6 +27,22 @@ func NewPlotter() (*JiraPlotter, error) {
 	}, err
 }
 
+// DrawPlot draws a plot given labels and 2 slices for representing the X and Y axes
+func (p *JiraPlotter) DrawPlot(plotName, xLabel, yLabel string, sl1, sl2 []float64) error {
+	p.Title.Text = plotName
+	p.X.Label.Text = xLabel
+	p.Y.Label.Text = yLabel
+
+	err := plotutil.AddLinePoints(p.Plot,
+		convertToPoints(sl1, sl2),
+	)
+	if err != nil {
+		return err
+	}
+
+	return p.Save(8*vg.Inch, 8*vg.Inch, fmt.Sprintf("%s/%s.png", p.path, plotName))
+}
+
 // DrawAttachmentsBarchart computes a barchart given two slices of floats
 func (p *JiraPlotter) DrawAttachmentsBarchart(plotName, yLabel string, sl1, sl2 []float64) error {
 	barA := plotter.Values{floats.Sum(sl1) / float64(len(sl1))}
@@ -56,6 +72,15 @@ func (p *JiraPlotter) DrawAttachmentsBarchart(plotName, yLabel string, sl1, sl2 
 	p.Legend.Add("Without Attachments", barChartB)
 
 	return p.Save(8*vg.Inch, 8*vg.Inch, fmt.Sprintf("%s/%s.png", p.path, plotName))
+}
+
+func convertToPoints(sl1, sl2 []float64) plotter.XYs {
+	pts := make(plotter.XYs, len(sl1))
+	for i := range pts {
+		pts[i].X = sl1[i]
+		pts[i].Y = sl2[i]
+	}
+	return pts
 }
 
 func computeAverage(els []float64) float64 {
