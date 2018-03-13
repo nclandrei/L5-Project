@@ -83,17 +83,13 @@ func main() {
 	for i := 0; i < 2*(*goroutinesCount); i++ {
 		select {
 		case searchResponse := <-done:
-			log.Println("got inside search response")
 			if searchResponse != nil {
-				log.Println("up issues")
 				dbChan <- searchResponse.Issues
-				log.Println("down issues")
 				for _, issue := range searchResponse.Issues {
 					issues = append(issues, issue)
 				}
 			}
 		case err := <-errs:
-			log.Println("inside err select")
 			if err != nil {
 				log.Printf("could not retrieve issues: %v\n", err)
 			}
@@ -104,5 +100,4 @@ func main() {
 
 	// close both database channels
 	close(dbChan)
-	close(dbErrChan)
 }
