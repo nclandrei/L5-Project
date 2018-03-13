@@ -3,7 +3,6 @@ package db
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/nclandrei/L5-Project/jira"
@@ -47,7 +46,6 @@ func NewBoltDB(path string) (*BoltDB, error) {
 // InsertIssues takes a slice of issues and inserts them into Bolt
 func (db *BoltDB) InsertIssues(issueChan chan []jira.Issue, errChan chan error) {
 	for issues := range issueChan {
-		log.Println("got inside the db")
 		tx, err := db.Begin(true)
 		if err != nil {
 			errChan <- fmt.Errorf("could not create transaction: %v", err)
