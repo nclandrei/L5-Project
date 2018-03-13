@@ -3,6 +3,7 @@ package db
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/nclandrei/L5-Project/jira"
@@ -44,21 +45,29 @@ func NewBoltDB(path string) (*BoltDB, error) {
 }
 
 // InsertIssues takes a slice of issues and inserts them into Bolt
-func (db *BoltDB) InsertIssues(issues []jira.Issue) error {
-	return db.Update(func(tx *bolt.Tx) error {
+func (db *BoltDB) InsertIssues(issueChan chan []jira.Issue, errChan chan error) {
+	for issues := range issueChan {
+		log.Println("got inside the db")
+		tx, err := db.Begin(true)
+		if err != nil {
+			errChan <- fmt.Errorf("could not create transaction: %v", err)
+		}
 		b := tx.Bucket([]byte(bucketName))
 		for _, issue := range issues {
 			buf, err := json.Marshal(&issue)
 			if err != nil {
-				return err
+				errChan <- fmt.Errorf("could not marshal issue %s: %v", issue.Key, err)
 			}
 			err = b.Put([]byte(issue.Key), buf)
 			if err != nil {
-				return err
+				errChan <- fmt.Errorf("could not insert issue %s: %v", issue.Key, err)
 			}
 		}
-		return nil
-	})
+		if err = tx.Commit(); err != nil {
+			errChan <- fmt.Errorf("could not commit transaction: %v", err)
+		}
+	}
+	close(errChan)
 }
 
 // GetIssues retrieves all the issues from inside the database
