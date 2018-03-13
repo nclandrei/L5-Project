@@ -71,19 +71,22 @@ func (db *BoltDB) InsertIssues(issueChan chan []jira.Issue, errChan chan error) 
 // GetIssues retrieves all the issues from inside the database
 func (db *BoltDB) GetIssues() ([]jira.Issue, error) {
 	var issues []jira.Issue
-	err := db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(bucketName))
-		if b == nil {
-			return fmt.Errorf("could not retrieve users bucket from bolt")
+	tx, err := db.Begin(true)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+	b := tx.Bucket([]byte(bucketName))
+	if b == nil {
+		return nil, fmt.Errorf("could not retrieve users bucket from bolt")
+	}
+	err = b.ForEach(func(k, v []byte) error {
+		var issue jira.Issue
+		err := json.Unmarshal(v, &issue)
+		if err == nil {
+			issues = append(issues, issue)
 		}
-		return b.ForEach(func(k, v []byte) error {
-			var issue jira.Issue
-			err := json.Unmarshal(v, &issue)
-			if err == nil {
-				issues = append(issues, issue)
-			}
-			return err
-		})
+		return err
 	})
 	return issues, err
 }
