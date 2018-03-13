@@ -60,15 +60,6 @@
 
 [[projects]]
   branch = "master"
-  name = "github.com/lib/pq"
-  packages = [
-    ".",
-    "oid"
-  ]
-  revision = "88edab0803230a3898347e77b474f8c1820a1f20"
-
-[[projects]]
-  branch = "master"
   name = "github.com/llgcode/draw2d"
   packages = [
     ".",
@@ -277,6 +268,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "4aad0f50b52bcacc0e9bbf836014b880b36dc8a663fc49e9e088b15ec61ad989"
+  inputs-digest = "afdf91f130f4bc8c3639fb2cd1119e3005e71b1b96c8fd181643967db6523e42"
   solver-name = "gps-cdcl"
   solver-version = 1
