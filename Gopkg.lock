@@ -24,6 +24,12 @@
   revision = "644b8db467afccf19a0692a3e31a1868e4287ab8"
 
 [[projects]]
+  name = "github.com/boltdb/bolt"
+  packages = ["."]
+  revision = "2f1ce7a837dcb8da3ec595b1dac9d0632f0f99e8"
+  version = "v1.3.1"
+
+[[projects]]
   branch = "master"
   name = "github.com/golang/freetype"
   packages = [
@@ -129,6 +135,12 @@
     "jwt"
   ]
   revision = "2f32c3ac0fa4fb807a0fcefb0b6f2468a0d99bd0"
+
+[[projects]]
+  branch = "master"
+  name = "golang.org/x/sys"
+  packages = ["unix"]
+  revision = "c28acc882ebcbfbe8ce9f0f14b9ac26ee138dd51"
 
 [[projects]]
   name = "golang.org/x/text"
@@ -265,6 +277,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "653bdf596f411f231536917fdd254f2620b4c0fd497b22e2aa16f5ff74e26bbe"
+  inputs-digest = "4aad0f50b52bcacc0e9bbf836014b880b36dc8a663fc49e9e088b15ec61ad989"
   solver-name = "gps-cdcl"
   solver-version = 1
