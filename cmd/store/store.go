@@ -41,6 +41,11 @@ func main() {
 		log.Fatalf("could not create Bolt DB: %v\n", err)
 	}
 
+	// langClient, err := gcp.NewLanguageClient(context.Background())
+	// if err != nil {
+	// 	log.Fatalf("could not create GCP language client: %v\n", err)
+	// }
+
 	jiraClient, err := jira.NewClient(clientURL)
 	if err != nil {
 		log.Fatalf("Could not create Jira client: %v\n", err)
