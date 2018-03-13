@@ -60,7 +60,7 @@ func NewClient(url *url.URL) (*Client, error) {
 			Timeout:   60 * time.Second,
 			KeepAlive: 30 * time.Second,
 		}).Dial,
-		TLSHandshakeTimeout: 45 * time.Second,
+		TLSHandshakeTimeout: 60 * time.Second,
 	}
 
 	return &Client{
