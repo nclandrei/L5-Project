@@ -2,11 +2,13 @@ package plot
 
 import (
 	"fmt"
-	"math/rand"
 
-	"gonum.org/v1/plot"
 	"gonum.org/v1/plot/plotter"
 	"gonum.org/v1/plot/plotutil"
+
+	"gonum.org/v1/gonum/floats"
+
+	"gonum.org/v1/plot"
 	"gonum.org/v1/plot/vg"
 )
 
@@ -25,38 +27,37 @@ func NewPlotter() (*JiraPlotter, error) {
 	}, err
 }
 
-// Draw computes a plot given a slice of XY points
-func (p *JiraPlotter) Draw(plotName, xLabel, yLabel string, firstAxisSlice, secondAxisSlice []interface{}) error {
+// DrawAttachmentsBarchart computes a barchart given two slices of floats
+func (p *JiraPlotter) DrawAttachmentsBarchart(plotName, yLabel string, sl1, sl2 []float64) error {
+	barA := plotter.Values{floats.Sum(sl1) / float64(len(sl1))}
+	barB := plotter.Values{floats.Sum(sl2) / float64(len(sl2))}
+
 	p.Title.Text = plotName
-	p.X.Label.Text = xLabel
 	p.Y.Label.Text = yLabel
 
-	err := plotutil.AddLinePoints(p.Plot,
-		"First", convertToPoints(firstAxisSlice),
-		"Second", convertToPoints(secondAxisSlice),
-	)
+	w := vg.Points(20)
+	barChartA, err := plotter.NewBarChart(barA, w)
 	if err != nil {
 		return err
 	}
+	barChartA.LineStyle.Width = vg.Length(0)
+	barChartA.Color = plotutil.Color(0)
+	barChartA.Offset = -w
 
-	// Save the plot to a PNG file.
+	barChartB, err := plotter.NewBarChart(barB, w)
+	if err != nil {
+		return err
+	}
+	barChartB.LineStyle.Width = vg.Length(0)
+	barChartB.Color = plotutil.Color(1)
+
+	p.Add(barChartA, barChartB)
+	p.Legend.Add("With Attachments", barChartA)
+	p.Legend.Add("Without Attachments", barChartB)
+
 	return p.Save(8*vg.Inch, 8*vg.Inch, fmt.Sprintf("%s/%s.png", p.path, plotName))
 }
 
-func convertToPoints(els []interface{}) plotter.XYs {
-	pts := make(plotter.XYs, len(els))
-}
-
-// randomPoints returns some random x, y points.
-func randomPoints(n int) plotter.XYs {
-	pts := make(plotter.XYs, n)
-	for i := range pts {
-		if i == 0 {
-			pts[i].X = rand.Float64()
-		} else {
-			pts[i].X = pts[i-1].X + rand.Float64()
-		}
-		pts[i].Y = pts[i].X + 10*rand.Float64()
-	}
-	return pts
+func computeAverage(els []float64) float64 {
+	return floats.Sum(els) / float64(len(els))
 }
