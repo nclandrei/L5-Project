@@ -6,6 +6,9 @@ import (
 	"time"
 )
 
+// Custom time format corresponding to Jira format
+const timeFormat = "2006-01-02T15:04:05.000-0700"
+
 // JTime holds the time formatted in Jira's specific format
 type JTime time.Time
 
@@ -21,7 +24,7 @@ func (t *JTime) UnmarshalJSON(b []byte) error {
 		return nil
 	}
 
-	jiraTime, err := time.Parse("2006-01-02T15:04:05.000-0700", s)
+	jiraTime, err := time.Parse(timeFormat, s)
 	if err != nil {
 		jiraTime, err = time.Parse("2006-01-02", s)
 		if err != nil {
@@ -36,7 +39,7 @@ func (t *JTime) UnmarshalJSON(b []byte) error {
 
 // MarshalJSON marshals a JiraTime struct into a slice of bytes
 func (t JTime) MarshalJSON() ([]byte, error) {
-	jTime := fmt.Sprintf("\"%s\"", time.Time(t))
+	jTime := fmt.Sprintf("\"%s\"", time.Time(t).Format(timeFormat))
 	return []byte(jTime), nil
 }
 
