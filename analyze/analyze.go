@@ -10,18 +10,16 @@ import (
 	languagepb "google.golang.org/genproto/googleapis/cloud/language/v1"
 )
 
-// IssuesWithAttachments returns issues that have at least one attachment
-func IssuesWithAttachments(issues []jira.Issue) ([]jira.Issue, []float64) {
-	var resultIssues []jira.Issue
+// AttachmentsAnalysis returns time-to-complete for all issues with attachments
+func AttachmentsAnalysis(issues []jira.Issue) []float64 {
 	var timeDiffs []float64
 	for _, issue := range issues {
 		timeDiff := timeToResolve(issue)
 		if len(issue.Fields.Attachments) > 0 && timeDiff > -1 && isIssueHighPriority(issue) {
-			resultIssues = append(resultIssues, issue)
 			timeDiffs = append(timeDiffs, timeDiff)
 		}
 	}
-	return resultIssues, timeDiffs
+	return timeDiffs
 }
 
 // SentimentScoreFromText calculates the sentiment score for a fragment after querying GCP
