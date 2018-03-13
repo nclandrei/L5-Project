@@ -1,6 +1,7 @@
 ### graphs and bolt DB ###
 resources/bolt/
 resources/graphs/
+users.db
 
 ### Go ###
 # Binaries for programs and plugins
