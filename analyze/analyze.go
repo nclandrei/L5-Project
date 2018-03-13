@@ -10,6 +10,34 @@ import (
 	languagepb "google.golang.org/genproto/googleapis/cloud/language/v1"
 )
 
+// WordinessAnalysis returns wordiness of a field (summary/comment/description) and time-to-complete (in hours)
+func WordinessAnalysis(issues []jira.Issue, field string) ([]float64, []float64) {
+	var wordCountSlice []float64
+	var timeDiffs []float64
+	for _, issue := range issues {
+		timeDiff := timeToResolve(issue)
+		if timeDiff > -1 && isIssueHighPriority(issue) {
+			switch field {
+			case "description":
+				wordCountSlice = append(wordCountSlice, float64(calculateNumberOfWords(issue.Fields.Description)))
+				break
+			case "summary":
+				wordCountSlice = append(wordCountSlice, float64(calculateNumberOfWords(issue.Fields.Summary)))
+				break
+			case "comment":
+				wc := 0
+				for _, comment := range issue.Fields.Comments.Comments {
+					wc += calculateNumberOfWords(comment.Body)
+				}
+				wordCountSlice = append(wordCountSlice, float64(wc))
+				break
+			}
+			timeDiffs = append(timeDiffs, timeDiff)
+		}
+	}
+	return wordCountSlice, timeDiffs
+}
+
 // AttachmentsAnalysis returns time-to-complete (in hours) for all issues with and without attachments
 func AttachmentsAnalysis(issues []jira.Issue) ([]float64, []float64) {
 	var withAttchTimeDiffs []float64
@@ -53,8 +81,8 @@ func SentimentScoreFromText(doc string) (float32, error) {
 	return sentiment.DocumentSentiment.Score, nil
 }
 
-// CalculateNumberOfWords returns the number of words in a string
-func CalculateNumberOfWords(s string) int {
+// calculateNumberOfWords returns the number of words in a string
+func calculateNumberOfWords(s string) int {
 	wordCount := 0
 	lines := strings.Split(s, "\n")
 	for _, line := range lines {
@@ -64,7 +92,7 @@ func CalculateNumberOfWords(s string) int {
 }
 
 // GetAttachmentType returns the attachment type based on the file extension
-func GetAttachmentType(filename string) jira.AttachmentType {
+func getAttachmentType(filename string) jira.AttachmentType {
 	extIndex := strings.LastIndex(filename, ".")
 	ext := filename[(extIndex + 1):]
 	switch ext {
