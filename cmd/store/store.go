@@ -2,15 +2,14 @@ package main
 
 import (
 	"flag"
-	"runtime"
 
 	"github.com/nclandrei/L5-Project/db"
 
-	"github.com/nclandrei/L5-Project/jira"
-	// "github.com/nclandrei/L5-Project/processing"
 	"log"
 	"math"
 	"net/url"
+
+	"github.com/nclandrei/L5-Project/jira"
 )
 
 // This defines the maximum number of concurrent client calls to Jira REST API
@@ -90,6 +89,4 @@ func main() {
 	log.Printf("retrieved %d issues from Jira\n", len(issues))
 
 	close(dbChan)
-
-	log.Println(runtime.NumGoroutine())
 }
