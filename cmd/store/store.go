@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"runtime"
 
 	"github.com/nclandrei/L5-Project/db"
 
@@ -12,17 +13,17 @@ import (
 	"net/url"
 )
 
+// This defines the maximum number of concurrent client calls to Jira REST API
+// as, otherwise, it would start dropping the connections
+const maxNoGoroutines = 100
+
 // store all the flags
 var (
 	jiraURLStr      = flag.String("jiraURL", "http://issues.apache.org", "the URL to the Jira instance")
 	projectName     = flag.String("project", "Kafka", "defines the name of the project to be queried upon")
-	goroutinesCount = flag.Int("goroutinesCount", 100, "defines the number of goroutines to be used")
-	boltDBPath      = flag.String("dbPath", "../../resources/bolt/users.db", "absolute path to the Bolt database")
+	goroutinesCount = flag.Int("goroutinesCount", maxNoGoroutines, "defines the number of goroutines to be used")
+	boltDBPath      = flag.String("dbPath", "users.db", "absolute path to the Bolt database")
 )
-
-// This defines the maximum number of concurrent client calls to Jira REST API
-// as, otherwise, it would start dropping the connections
-const maxNoGoroutines = 100
 
 func main() {
 	flag.Parse()
@@ -60,6 +61,7 @@ func main() {
 
 	done := make(chan *jira.SearchResponse, numberOfIssues)
 	errs := make(chan error, numberOfIssues)
+	dbChan := make(chan []jira.Issue, *goroutinesCount)
 
 	var issues []jira.Issue
 
@@ -67,10 +69,13 @@ func main() {
 		go jiraClient.GetPaginatedIssues(done, errs, i, int(issueSliceSize), *projectName)
 	}
 
+	go boltDB.InsertIssues(dbChan)
+
 	for i := 0; i < 2*(*goroutinesCount); i++ {
 		select {
 		case searchResponse := <-done:
 			if searchResponse != nil {
+				dbChan <- searchResponse.Issues
 				for _, issue := range searchResponse.Issues {
 					issues = append(issues, issue)
 				}
@@ -81,4 +86,10 @@ func main() {
 			}
 		}
 	}
+
+	log.Printf("retrieved %d issues from Jira\n", len(issues))
+
+	close(dbChan)
+
+	log.Println(runtime.NumGoroutine())
 }
