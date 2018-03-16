@@ -52,6 +52,9 @@ func (db *BoltDB) InsertIssues(issueChan chan []jira.Issue, errChan chan error) 
 		}
 		b := tx.Bucket([]byte(bucketName))
 		for _, issue := range issues {
+			if b.Get([]byte(issue.Key)) == nil {
+				// compute sentiment and add that as well
+			}
 			buf, err := json.Marshal(&issue)
 			if err != nil {
 				errChan <- fmt.Errorf("could not marshal issue %s: %v", issue.Key, err)
@@ -68,8 +71,8 @@ func (db *BoltDB) InsertIssues(issueChan chan []jira.Issue, errChan chan error) 
 	close(errChan)
 }
 
-// GetIssues retrieves all the issues from inside the database
-func (db *BoltDB) GetIssues() ([]jira.Issue, error) {
+// GetAllIssues retrieves all the issues from inside the database
+func (db *BoltDB) GetAllIssues() ([]jira.Issue, error) {
 	var issues []jira.Issue
 	tx, err := db.Begin(true)
 	if err != nil {
