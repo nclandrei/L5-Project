@@ -42,4 +42,9 @@ func main() {
 	if err != nil {
 		log.Fatalf("could not draw comment plot: %v\n", err)
 	}
+
+	// langClient, err := gcp.NewLanguageClient(context.Background())
+	// if err != nil {
+	// 	log.Fatalf("could not create GCP language client: %v\n", err)
+	// }
 }
