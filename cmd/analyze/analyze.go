@@ -25,7 +25,7 @@ func main() {
 		log.Fatalf("could not create new plotter: %v\n", err)
 	}
 
-	dbIssues, err := boltDB.GetIssues()
+	dbIssues, err := boltDB.GetAllIssues()
 	if err != nil {
 		log.Fatalf("could not retrieve issues: %v\n", err)
 	}
@@ -42,9 +42,4 @@ func main() {
 	if err != nil {
 		log.Fatalf("could not draw comment plot: %v\n", err)
 	}
-
-	// langClient, err := gcp.NewLanguageClient(context.Background())
-	// if err != nil {
-	// 	log.Fatalf("could not create GCP language client: %v\n", err)
-	// }
 }
