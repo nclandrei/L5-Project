@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/nclandrei/L5-Project/gcp"
+
 	"github.com/nclandrei/L5-Project/jira"
 
 	"github.com/boltdb/bolt"
@@ -44,7 +46,7 @@ func NewBoltDB(path string) (*BoltDB, error) {
 }
 
 // InsertIssues takes a slice of issues and inserts them into Bolt
-func (db *BoltDB) InsertIssues(issueChan chan []jira.Issue, errChan chan error) {
+func (db *BoltDB) InsertIssues(langClient *gcp.LangClient, issueChan chan []jira.Issue, errChan chan error) {
 	for issues := range issueChan {
 		tx, err := db.Begin(true)
 		if err != nil {
@@ -53,7 +55,14 @@ func (db *BoltDB) InsertIssues(issueChan chan []jira.Issue, errChan chan error) 
 		b := tx.Bucket([]byte(bucketName))
 		for _, issue := range issues {
 			if b.Get([]byte(issue.Key)) == nil {
-				// compute sentiment and add that as well
+				insertSentimentScores(issue)
+				summarySentiment, err := langClient.SentimentScoreFromText(issue.Fields.Summary)
+				if err != nil {
+					errChan <- err
+				} else {
+					issue.SentimentScore.Summary = summarySentiment
+				}
+
 			}
 			buf, err := json.Marshal(&issue)
 			if err != nil {
