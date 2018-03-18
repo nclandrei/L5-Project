@@ -52,6 +52,11 @@ func AttachmentsAnalysis(issues []jira.Issue) ([]float64, []float64) {
 	return withAttchTimeDiffs, withoutAttchTimeDiffs
 }
 
+// SentimentAnalysis outputs plot for sentiment score variable.
+func SentimentAnalysis(issues []jira.Issue) ([]float64, []float64) {
+	return nil, nil
+}
+
 // calculateNumberOfWords returns the number of words in a string
 func calculateNumberOfWords(s string) int {
 	wordCount := 0
@@ -92,6 +97,15 @@ func getAttachmentType(filename string) jira.AttachmentType {
 	default:
 		return jira.Code
 	}
+}
+
+// concatenateComments returns a string containing all the comment bodies concatenated
+func concatenateComments(issue jira.Issue) string {
+	var bodies []string
+	for _, comment := range issue.Fields.Comments.Comments {
+		bodies = append(bodies, comment.Body)
+	}
+	return strings.Join(bodies, " ")
 }
 
 // calculateJTimeDifference calculates the duration in hours between 2 different timestamps
