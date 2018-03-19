@@ -14,13 +14,12 @@ const (
 	bucketName = "users"
 )
 
-// BoltDB holds the information related to an instance of Bolt Database
+// BoltDB holds the information related to an instance of Bolt Database.
 type BoltDB struct {
 	*bolt.DB
-	path string
 }
 
-// NewBoltDB returns a new Bolt Database instance
+// NewBoltDB returns a new Bolt Database instance.
 func NewBoltDB(path string) (*BoltDB, error) {
 	options := &bolt.Options{
 		Timeout: 30 * time.Second,
@@ -38,12 +37,11 @@ func NewBoltDB(path string) (*BoltDB, error) {
 		return nil, err
 	}
 	return &BoltDB{
-		DB:   db,
-		path: path,
+		DB: db,
 	}, err
 }
 
-// InsertIssues takes a slice of issues and inserts them into Bolt
+// InsertIssues takes a slice of issues and inserts them into Bolt.
 func (db *BoltDB) InsertIssues(issueChan chan []jira.Issue, errChan chan error) {
 	for issues := range issueChan {
 		tx, err := db.Begin(true)
@@ -68,7 +66,7 @@ func (db *BoltDB) InsertIssues(issueChan chan []jira.Issue, errChan chan error) 
 	close(errChan)
 }
 
-// GetAllIssues retrieves all the issues from inside the database
+// GetAllIssues retrieves all the issues from inside the database.
 func (db *BoltDB) GetAllIssues() ([]jira.Issue, error) {
 	var issues []jira.Issue
 	tx, err := db.Begin(true)
