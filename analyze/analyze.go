@@ -99,13 +99,15 @@ func getAttachmentType(filename string) jira.AttachmentType {
 	}
 }
 
-// concatenateComments returns a string containing all the comment bodies concatenated
-func concatenateComments(issue jira.Issue) string {
-	var bodies []string
+// concatenateComments returns a string containing all the comment bodies concatenated.
+func concatenateComments(issue jira.Issue) (string, error) {
+	var builder strings.Builder
 	for _, comment := range issue.Fields.Comments.Comments {
-		bodies = append(bodies, comment.Body)
+		if _, err := builder.WriteString(comment.Body); err != nil {
+			return "", err
+		}
 	}
-	return strings.Join(bodies, " ")
+	return builder.String(), nil
 }
 
 // calculateJTimeDifference calculates the duration in hours between 2 different timestamps
