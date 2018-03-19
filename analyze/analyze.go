@@ -7,7 +7,7 @@ import (
 	"github.com/nclandrei/L5-Project/jira"
 )
 
-// WordinessAnalysis returns wordiness of a field (summary/comment/description) and time-to-complete (in hours)
+// WordinessAnalysis returns wordiness of a field (summary/comment/description) and time-to-complete (in hours).
 func WordinessAnalysis(issues []jira.Issue, field string) ([]float64, []float64) {
 	var wordCountSlice []float64
 	var timeDiffs []float64
@@ -35,7 +35,7 @@ func WordinessAnalysis(issues []jira.Issue, field string) ([]float64, []float64)
 	return wordCountSlice, timeDiffs
 }
 
-// AttachmentsAnalysis returns time-to-complete (in hours) for all issues with and without attachments
+// AttachmentsAnalysis returns time-to-complete (in hours) for all issues with and without attachments.
 func AttachmentsAnalysis(issues []jira.Issue) ([]float64, []float64) {
 	var withAttchTimeDiffs []float64
 	var withoutAttchTimeDiffs []float64
@@ -57,7 +57,7 @@ func SentimentAnalysis(issues []jira.Issue) ([]float64, []float64) {
 	return nil, nil
 }
 
-// calculateNumberOfWords returns the number of words in a string
+// calculateNumberOfWords returns the number of words in a string.
 func calculateNumberOfWords(s string) int {
 	wordCount := 0
 	lines := strings.Split(s, "\n")
@@ -67,7 +67,7 @@ func calculateNumberOfWords(s string) int {
 	return wordCount
 }
 
-// GetAttachmentType returns the attachment type based on the file extension
+// GetAttachmentType returns the attachment type based on the file extension.
 func getAttachmentType(filename string) jira.AttachmentType {
 	extIndex := strings.LastIndex(filename, ".")
 	ext := filename[(extIndex + 1):]
@@ -110,15 +110,17 @@ func concatenateComments(issue jira.Issue) (string, error) {
 	return builder.String(), nil
 }
 
-// calculateJTimeDifference calculates the duration in hours between 2 different timestamps
+// calculateJTimeDifference calculates the duration in hours between 2 different timestamps.
 func calculateJTimeDifference(t1, t2 jira.JTime) float64 {
 	return time.Time(t1).Sub(time.Time(t2)).Hours()
 }
 
+// isIssueHighPriority checks whether an issue has priority ID either 1 or 2 (i.e. Critical or Major).
 func isIssueHighPriority(issue jira.Issue) bool {
 	return issue.Fields.Priority.ID == "1" || issue.Fields.Priority.ID == "2"
 }
 
+// timeToResolve, given an issue, returns how much time it took to close that issue.
 func timeToResolve(issue jira.Issue) float64 {
 	for _, history := range issue.Changelog.Histories {
 		for _, item := range history.Items {
