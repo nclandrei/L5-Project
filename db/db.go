@@ -17,6 +17,7 @@ const (
 // BoltDB holds the information related to an instance of Bolt Database.
 type BoltDB struct {
 	*bolt.DB
+	Issues chan []jira.Issue
 }
 
 // NewBoltDB returns a new Bolt Database instance.
@@ -38,6 +39,7 @@ func NewBoltDB(path string) (*BoltDB, error) {
 	}
 	return &BoltDB{
 		DB: db,
+		issues: make(chan []jira.Issue),
 	}, err
 }
 
