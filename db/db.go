@@ -23,7 +23,7 @@ type BoltDB struct {
 // NewBoltDB returns a new Bolt Database instance.
 func NewBoltDB(path string) (*BoltDB, error) {
 	options := &bolt.Options{
-		Timeout: 30 * time.Second,
+		Timeout: 20 * time.Second,
 	}
 	db, err := bolt.Open(path, 0600, options)
 	if err != nil {
@@ -44,7 +44,7 @@ func NewBoltDB(path string) (*BoltDB, error) {
 }
 
 // InsertIssues takes a slice of issues and inserts them into Bolt.
-func (db *BoltDB) InsertIssues(issueChan chan []jira.Issue, errChan chan error) {
+func (db *BoltDB) InsertIssues() {
 	for issues := range issueChan {
 		tx, err := db.Begin(true)
 		if err != nil {
