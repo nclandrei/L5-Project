@@ -17,7 +17,7 @@ const (
 // BoltDB holds the information related to an instance of Bolt Database.
 type BoltDB struct {
 	*bolt.DB
-	IssueChan chan []jira.Issue
+	ErrChan chan error
 }
 
 // NewBoltDB returns a new Bolt Database instance.
@@ -38,33 +38,36 @@ func NewBoltDB(path string) (*BoltDB, error) {
 		return nil, err
 	}
 	return &BoltDB{
-		DB: db,
-		IssueChan: make(chan []jira.Issue),
+		DB:      db,
+		ErrChan: make(chan error),
 	}, err
 }
 
 // InsertIssues takes a slice of issues and inserts them into Bolt.
 func (db *BoltDB) InsertIssues(issues []jira.Issue) {
-	go func() {
+	for _, issue := range issues {
 		tx, err := db.Begin(true)
 		if err != nil {
-			errChan <- fmt.Errorf("could not create transaction: %v", err)
+			db.ErrChan <- fmt.Errorf("could not create transaction: %v", err)
+			return
 		}
 		b := tx.Bucket([]byte(bucketName))
-		for _, issue := range issues {
-			buf, err := json.Marshal(&issue)
-			if err != nil {
-				errChan <- fmt.Errorf("could not marshal issue %s: %v", issue.Key, err)
-			}
-			err = b.Put([]byte(issue.Key), buf)
-			if err != nil {
-				errChan <- fmt.Errorf("could not insert issue %s: %v", issue.Key, err)
-			}
+		buf, err := json.Marshal(&issue)
+		if err != nil {
+			db.ErrChan <- fmt.Errorf("could not marshal issue %s: %v", issue.Key, err)
+			return
+		}
+		err = b.Put([]byte(issue.Key), buf)
+		if err != nil {
+			db.ErrChan <- fmt.Errorf("could not insert issue %s: %v", issue.Key, err)
+			return
 		}
 		if err = tx.Commit(); err != nil {
-			errChan <- fmt.Errorf("could not commit transaction: %v", err)
+			db.ErrChan <- fmt.Errorf("could not commit transaction: %v", err)
+			return
 		}
 	}
+	db.ErrChan <- nil
 }
 
 // GetAllIssues retrieves all the issues from inside the database.
