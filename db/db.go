@@ -18,6 +18,7 @@ const (
 type BoltDB struct {
 	*bolt.DB
 	WriterChan chan []jira.Issue
+	ErrChan    chan error
 }
 
 // NewBoltDB returns a new Bolt Database instance.
@@ -44,8 +45,8 @@ func NewBoltDB(path string) (*BoltDB, error) {
 }
 
 // InsertIssues takes a slice of issues and inserts them into Bolt.
-func (db *BoltDB) InsertIssues() {
-	for _, issues := range db.WriterChan {
+func (db *BoltDB) InsertIssues(issues []jira.Issue) {
+	for _, issue := range issues {
 		tx, err := db.Begin(true)
 		if err != nil {
 			db.ErrChan <- fmt.Errorf("could not create transaction: %v", err)
