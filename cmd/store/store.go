@@ -60,8 +60,6 @@ func main() {
 
 	done := make(chan *jira.SearchResponse)
 	errs := make(chan error)
-	dbChan := make(chan []jira.Issue)
-	dbErrChan := make(chan error)
 
 	var issues []jira.Issue
 
@@ -69,22 +67,14 @@ func main() {
 		go jiraClient.GetPaginatedIssues(done, errs, i, int(issueSliceSize), *projectName)
 	}
 
-	// start goroutine listening for issues sent to the channel
-	go boltDB.InsertIssues(dbChan, dbErrChan)
-
-	go func() {
-		for err := range dbErrChan {
-			if err != nil {
-				log.Println(err)
-			}
-		}
-	}()
+	successCounter := 0
 
 	for i := 0; i < 2*(*goroutinesCount); i++ {
 		select {
 		case searchResponse := <-done:
 			if searchResponse != nil {
-				dbChan <- searchResponse.Issues
+				successCounter++
+				go boltDB.InsertIssues(searchResponse.Issues)
 				for _, issue := range searchResponse.Issues {
 					issues = append(issues, issue)
 				}
@@ -96,8 +86,10 @@ func main() {
 		}
 	}
 
-	log.Printf("retrieved %d issues from Jira\n", len(issues))
-
-	// close database channel
-	close(dbChan)
+	for successCounter >= 0 {
+		successCounter--
+		if err := <-boltDB.ErrChan; err != nil {
+			log.Printf("error while inserting issues: %v\n", err)
+		}
+	}
 }
