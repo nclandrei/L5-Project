@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"sync"
 
 	"github.com/nclandrei/L5-Project/db"
 
@@ -58,38 +59,19 @@ func main() {
 
 	issueSliceSize := math.Ceil(float64(numberOfIssues) / float64(*goroutinesCount))
 
-	done := make(chan *jira.SearchResponse)
-	errs := make(chan error)
-
-	var issues []jira.Issue
+	var wg sync.WaitGroup
 
 	for i := 0; i < *goroutinesCount; i++ {
-		go jiraClient.GetPaginatedIssues(done, errs, i, int(issueSliceSize), *projectName)
-	}
-
-	successCounter := 0
-
-	for i := 0; i < 2*(*goroutinesCount); i++ {
-		select {
-		case searchResponse := <-done:
-			if searchResponse != nil {
-				successCounter++
-				go boltDB.InsertIssues(searchResponse.Issues)
-				for _, issue := range searchResponse.Issues {
-					issues = append(issues, issue)
-				}
-			}
-		case err := <-errs:
+		wg.Add(1)
+		go func(index int) {
+			defer wg.Done()
+			issueSlice, err := jiraClient.GetIssues(*projectName, index, int(issueSliceSize))
 			if err != nil {
-				log.Printf("could not retrieve issues: %v\n", err)
+				log.Printf("error while getting issues: %v\n", err)
 			}
-		}
+			boltDB.InsertIssues(issueSlice)
+		}(i)
 	}
 
-	for successCounter >= 0 {
-		successCounter--
-		if err := <-boltDB.ErrChan; err != nil {
-			log.Printf("error while inserting issues: %v\n", err)
-		}
-	}
+	wg.Wait()
 }
