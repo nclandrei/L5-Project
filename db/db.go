@@ -10,6 +10,7 @@ import (
 	"github.com/boltdb/bolt"
 )
 
+// Name of the bucket where we'll be inserting our users.
 const (
 	bucketName = "users"
 )
