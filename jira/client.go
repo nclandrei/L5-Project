@@ -121,34 +121,25 @@ func (client *Client) AuthenticateClient() error {
 
 // GetIssues adds to channels responses retrieved from Jira
 func (client *Client) GetIssues(
-	responses chan<- *SearchResponse,
-	errs chan<- error,
+	projectName string,
 	paginationIndex int,
-	pageCount int,
-	projectName string) {
+	pageCount int) ([]Issue, error) {
 
 	client.setSearchPath(projectName, paginationIndex, pageCount)
 	resp, err := client.Get(client.URL.String())
 
 	if err != nil {
-		responses <- nil
-		errs <- err
-	} else {
-		defer resp.Body.Close()
-		if resp.StatusCode == http.StatusOK {
-			var searchResponse SearchResponse
-			if err := json.NewDecoder(resp.Body).Decode(&searchResponse); err != nil {
-				errs <- err
-				responses <- nil
-			} else {
-				errs <- nil
-				responses <- &searchResponse
-			}
-		} else {
-			errs <- fmt.Errorf("Status code different than 200: %v", resp.Status)
-			responses <- nil
-		}
+		return nil, err
 	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("Status code different than 200: %v", resp.Status)
+	}
+	var searchResponse SearchResponse
+	if err := json.NewDecoder(resp.Body).Decode(&searchResponse); err != nil {
+		return nil, err
+	}
+	return searchResponse.Issues, nil
 }
 
 // GetNumberOfIssues returns the total number of issues for a Jira project
