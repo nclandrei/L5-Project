@@ -15,6 +15,12 @@ const (
 	bucketName = "users"
 )
 
+// Database defines a generic interface for different DBs to implement.
+type Database interface {
+	Issues() ([]jira.Issue, error)
+	InsertIssues([]jira.Issue) error
+}
+
 // BoltDB holds the information related to an instance of Bolt Database.
 type BoltDB struct {
 	*bolt.DB
@@ -65,8 +71,8 @@ func (db *BoltDB) InsertIssues(issues []jira.Issue) error {
 	return nil
 }
 
-// GetAllIssues retrieves all the issues from inside the database.
-func (db *BoltDB) GetAllIssues() ([]jira.Issue, error) {
+// Issues retrieves all the issues from inside the database.
+func (db *BoltDB) Issues() ([]jira.Issue, error) {
 	var issues []jira.Issue
 	tx, err := db.Begin(true)
 	if err != nil {

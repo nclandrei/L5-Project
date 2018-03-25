@@ -25,7 +25,7 @@ func main() {
 		log.Fatalf("could not create new plotter: %v\n", err)
 	}
 
-	dbIssues, err := boltDB.GetAllIssues()
+	dbIssues, err := boltDB.Issues()
 	if err != nil {
 		log.Fatalf("could not retrieve issues: %v\n", err)
 	}
