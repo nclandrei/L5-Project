@@ -1,7 +1,10 @@
 package main
 
 import (
+	"context"
 	"log"
+
+	"github.com/nclandrei/L5-Project/gcp"
 
 	"github.com/nclandrei/L5-Project/plot"
 
@@ -25,13 +28,28 @@ func main() {
 		log.Fatalf("could not create new plotter: %v\n", err)
 	}
 
-	dbIssues, err := boltDB.Issues()
+	langClient, err := gcp.NewLanguageClient(context.Background())
+	if err != nil {
+		log.Fatalf("could not create new language client: %v\n", err)
+	}
+
+	ii, err := boltDB.Issues()
 	if err != nil {
 		log.Fatalf("could not retrieve issues: %v\n", err)
 	}
 
-	withAttch, withoutAttch := analyze.AttachmentsAnalysis(dbIssues)
-	wordCountSlice, timeDiffs := analyze.WordinessAnalysis(dbIssues, "description")
+	for _, issue := range ii {
+		bIssue, err := boltDB.IssueByKey(issue.Key)
+		if err != nil {
+			log.Fatalf("could not retrieve issue {%s} from bolt: %v\n", err)
+		}
+		if bIssue.SentimentScore == nil {
+			commentScorelangClient.SentimentScoreFromText
+		}
+	}
+
+	withAttch, withoutAttch := analyze.AttachmentsAnalysis(ii)
+	wordCountSlice, timeDiffs := analyze.WordinessAnalysis(ii, "description")
 
 	err = plotter.DrawAttachmentsBarchart("Attachments Analysis", "Time-To-Resolve", withAttch, withoutAttch)
 	if err != nil {
