@@ -1,8 +1,13 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"sync"
+
+	"github.com/nclandrei/L5-Project/analyze"
+
+	"github.com/nclandrei/L5-Project/gcp"
 
 	"github.com/nclandrei/L5-Project/db"
 
@@ -42,6 +47,11 @@ func main() {
 		log.Fatalf("could not create Bolt DB: %v\n", err)
 	}
 
+	langClient, err := gcp.NewLanguageClient(context.Background())
+	if err != nil {
+		log.Fatalf("could not create GCP language client: %v\n", err)
+	}
+
 	jiraClient, err := jira.NewClient(clientURL)
 	if err != nil {
 		log.Fatalf("Could not create Jira client: %v\n", err)
@@ -58,6 +68,46 @@ func main() {
 	}
 
 	issueSliceSize := math.Ceil(float64(numberOfIssues) / float64(*goroutinesCount))
+	preprocessCh := make(chan []jira.Issue)
+	dbCh := make(chan []jira.Issue)
+	pipelineDone := make(chan struct{})
+
+	go func() {
+		for ii := range preprocessCh {
+			for i := range ii {
+				bi, err := boltDB.IssueByKey(ii[i].Key)
+				if err != nil {
+					log.Printf("could not retrieve issue {%s} from bolt: %v\n", ii[i].Key, err)
+					continue
+				}
+				if bi != nil || bi.CommSentiment != 0 {
+					continue
+				}
+				concatComm, err := analyze.ConcatenateComments(ii[i])
+				if err != nil {
+					log.Printf("could not concatenate comments for issue {%s}: %v\n", ii[i].Key, err)
+					continue
+				}
+				score, err := langClient.CommSentimentScore(concatComm)
+				if err != nil {
+					log.Printf("could not calculate sentiment score for issue {%s}: %v\n", ii[i].Key, err)
+					continue
+				}
+				ii[i].CommSentiment = score
+			}
+			dbCh <- ii
+		}
+	}()
+
+	go func() {
+		for issues := range dbCh {
+			err := boltDB.InsertIssues(issues...)
+			if err != nil {
+				log.Printf("could not add issues to bolt: %v\n", err)
+			}
+		}
+		pipelineDone <- struct{}{}
+	}()
 
 	var wg sync.WaitGroup
 
@@ -68,10 +118,16 @@ func main() {
 			issueSlice, err := jiraClient.GetIssues(*projectName, index, int(issueSliceSize))
 			if err != nil {
 				log.Printf("error while getting issues: %v\n", err)
+				return
 			}
-			boltDB.InsertIssues(issueSlice)
+			preprocessCh <- issueSlice
 		}(i)
 	}
 
 	wg.Wait()
+
+	close(dbCh)
+	close(preprocessCh)
+
+	<-pipelineDone
 }
