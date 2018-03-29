@@ -56,21 +56,14 @@ const (
 
 // Issue defines the Jira issue retrieved via the REST API
 type Issue struct {
-	Key            string    `json:"key" bson:"_id"`
-	Expand         string    `json:"_"`
-	ID             string    `json:"-"`
-	Self           string    `json:"-"`
-	Fields         Fields    `json:"fields"`
-	Changelog      Changelog `json:"changelog"`
-	TimeToClose    float64
-	SentimentScore SentimentScore
-}
-
-// SentimentScore holds the GCP NLP sentiment scores for summary, description and comments
-type SentimentScore struct {
-	Summary     float32
-	Description float32
-	Comment     float32
+	Key           string    `json:"key" bson:"_id"`
+	Expand        string    `json:"_"`
+	ID            string    `json:"-"`
+	Self          string    `json:"-"`
+	Fields        Fields    `json:"fields"`
+	Changelog     Changelog `json:"changelog"`
+	TimeToClose   float64
+	CommSentiment float32
 }
 
 // Fields defines the fields retrieved via the REST API
