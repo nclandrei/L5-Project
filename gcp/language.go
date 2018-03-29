@@ -25,12 +25,12 @@ func NewLanguageClient(ctx context.Context) (*LangClient, error) {
 	}, nil
 }
 
-// SentimentScoreFromText calculates the sentiment score for a fragment after querying GCP
-func (client *LangClient) SentimentScoreFromText(doc string) (float32, error) {
+// CommSentimentScore calculates the sentiment score for an issue's comments after querying GCP.
+func (client *LangClient) CommSentimentScore(concatComments string) (float32, error) {
 	sentiment, err := client.AnalyzeSentiment(client.ctx, &languagepb.AnalyzeSentimentRequest{
 		Document: &languagepb.Document{
 			Source: &languagepb.Document_Content{
-				Content: doc,
+				Content: concatComments,
 			},
 			Type: languagepb.Document_PLAIN_TEXT,
 		},
