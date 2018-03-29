@@ -99,8 +99,8 @@ func getAttachmentType(filename string) jira.AttachmentType {
 	}
 }
 
-// concatenateComments returns a string containing all the comment bodies concatenated.
-func concatenateComments(issue jira.Issue) (string, error) {
+// ConcatenateComments returns a string containing all the comment bodies concatenated.
+func ConcatenateComments(issue jira.Issue) (string, error) {
 	var builder strings.Builder
 	for _, comment := range issue.Fields.Comments.Comments {
 		if _, err := builder.WriteString(comment.Body); err != nil {
