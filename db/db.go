@@ -49,7 +49,7 @@ func NewBoltDB(path string) (*BoltDB, error) {
 }
 
 // InsertIssues takes a slice of issues and inserts them into Bolt.
-func (db *BoltDB) InsertIssues(issues []jira.Issue) error {
+func (db *BoltDB) InsertIssues(issues ...jira.Issue) error {
 	for _, issue := range issues {
 		tx, err := db.Begin(true)
 		if err != nil {
@@ -69,6 +69,29 @@ func (db *BoltDB) InsertIssues(issues []jira.Issue) error {
 		}
 	}
 	return nil
+}
+
+// IssueByKey returns a single issue searched for by key.
+func (db *BoltDB) IssueByKey(key string) (*jira.Issue, error) {
+	tx, err := db.Begin(true)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+	b := tx.Bucket([]byte(bucketName))
+	if b == nil {
+		return nil, fmt.Errorf("could not retrieve users bucket from bolt")
+	}
+	var issue *jira.Issue
+	bIssue := b.Get([]byte(key))
+	if bIssue == nil {
+		return nil, nil
+	}
+	err = json.Unmarshal(bIssue, &issue)
+	if err != nil {
+		return nil, err
+	}
+	return issue, nil
 }
 
 // Issues retrieves all the issues from inside the database.
