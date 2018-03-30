@@ -27,7 +27,7 @@ var (
 	jiraURLStr      = flag.String("jiraURL", "http://issues.apache.org", "the URL to the Jira instance")
 	projectName     = flag.String("project", "Kafka", "defines the name of the project to be queried upon")
 	goroutinesCount = flag.Int("goroutinesCount", maxNoGoroutines, "defines the number of goroutines to be used")
-	boltDBPath      = flag.String("dbPath", "users.db", "absolute path to the Bolt database")
+	dbPath          = flag.String("dbPath", "users.db", "absolute path to the Bolt database")
 )
 
 func main() {
@@ -42,7 +42,7 @@ func main() {
 		log.Fatalf("jira URL provided is not a valid URL: %v\n", err)
 	}
 
-	boltDB, err := db.NewBoltDB(*boltDBPath)
+	boltDB, err := db.NewBoltDB(*dbPath)
 	if err != nil {
 		log.Fatalf("could not create Bolt DB: %v\n", err)
 	}
