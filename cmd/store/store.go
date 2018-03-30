@@ -24,20 +24,20 @@ const maxNoGoroutines = 100
 
 // store all the flags
 var (
-	jiraURLStr      = flag.String("jiraURL", "http://issues.apache.org", "the URL to the Jira instance")
-	projectName     = flag.String("project", "Kafka", "defines the name of the project to be queried upon")
-	goroutinesCount = flag.Int("goroutinesCount", maxNoGoroutines, "defines the number of goroutines to be used")
-	dbPath          = flag.String("dbPath", "users.db", "absolute path to the Bolt database")
+	jiraURL  = flag.String("jiraURL", "http://issues.apache.org", "the URL to the Jira instance")
+	project  = flag.String("project", "Kafka", "defines the name of the project to be queried upon")
+	gortnCnt = flag.Int("goroutinesCount", maxNoGoroutines, "defines the number of goroutines to be used")
+	dbPath   = flag.String("dbPath", "users.db", "absolute path to the Bolt database")
 )
 
 func main() {
 	flag.Parse()
 
-	if *goroutinesCount > maxNoGoroutines {
+	if *gortnCnt > maxNoGoroutines {
 		log.Fatalf("cannot have more than maximum number of goroutines... exiting now\n")
 	}
 
-	clientURL, err := url.Parse(*jiraURLStr)
+	clientURL, err := url.Parse(*jiraURL)
 	if err != nil {
 		log.Fatalf("jira URL provided is not a valid URL: %v\n", err)
 	}
@@ -62,20 +62,26 @@ func main() {
 		log.Fatalf("Could not authenticate Jira client with Apache: %v\n", err)
 	}
 
-	numberOfIssues, err := jiraClient.GetNumberOfIssues(*projectName)
+	numberOfIssues, err := jiraClient.GetNumberOfIssues(*project)
 	if err != nil {
 		log.Fatalf("Could not get total number of issues: %v\n", err)
 	}
 
-	issueSliceSize := math.Ceil(float64(numberOfIssues) / float64(*goroutinesCount))
-	preprocessCh := make(chan []jira.Issue)
-	dbCh := make(chan []jira.Issue)
-	pipelineDone := make(chan struct{})
+	issueSliceSize := math.Ceil(float64(numberOfIssues) / float64(*gortnCnt))
 
-	go func() {
-		for ii := range preprocessCh {
-			for i := range ii {
-				bi, err := boltDB.IssueByKey(ii[i].Key)
+	var wg sync.WaitGroup
+
+	for i := 0; i < *gortnCnt; i++ {
+		wg.Add(1)
+		go func(index int) {
+			defer wg.Done()
+			ii, err := jiraClient.GetIssues(*project, index, int(issueSliceSize))
+			if err != nil {
+				log.Printf("error while getting issues: %v\n", err)
+				return
+			}
+			for _, issue := range ii {
+				bi, err := boltDB.IssueByKey(issue.Key)
 				if err != nil {
 					log.Printf("could not retrieve issue {%s} from bolt: %v\n", ii[i].Key, err)
 					continue
@@ -95,39 +101,12 @@ func main() {
 				}
 				ii[i].CommSentiment = score
 			}
-			dbCh <- ii
-		}
-	}()
-
-	go func() {
-		for issues := range dbCh {
-			err := boltDB.InsertIssues(issues...)
+			err = boltDB.InsertIssues(ii...)
 			if err != nil {
 				log.Printf("could not add issues to bolt: %v\n", err)
 			}
-		}
-		pipelineDone <- struct{}{}
-	}()
-
-	var wg sync.WaitGroup
-
-	for i := 0; i < *goroutinesCount; i++ {
-		wg.Add(1)
-		go func(index int) {
-			defer wg.Done()
-			issueSlice, err := jiraClient.GetIssues(*projectName, index, int(issueSliceSize))
-			if err != nil {
-				log.Printf("error while getting issues: %v\n", err)
-				return
-			}
-			preprocessCh <- issueSlice
 		}(i)
 	}
 
 	wg.Wait()
-
-	close(dbCh)
-	close(preprocessCh)
-
-	<-pipelineDone
 }
