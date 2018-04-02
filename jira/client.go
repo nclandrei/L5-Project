@@ -57,7 +57,7 @@ func NewClient(url *url.URL) (*Client, error) {
 	// will most likely avoid errors on the connection
 	transport := &http.Transport{
 		Dial: (&net.Dialer{
-			Timeout:   60 * time.Second,
+			Timeout:   30 * time.Second,
 			KeepAlive: 30 * time.Second,
 		}).Dial,
 		TLSHandshakeTimeout: 60 * time.Second,
@@ -65,7 +65,7 @@ func NewClient(url *url.URL) (*Client, error) {
 
 	return &Client{
 		Client: &http.Client{
-			Timeout:   time.Second * 90,
+			Timeout:   time.Second * 60,
 			Jar:       cookieJar,
 			Transport: transport,
 		},
