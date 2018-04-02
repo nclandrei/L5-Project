@@ -54,17 +54,17 @@ func main() {
 
 	jiraClient, err := jira.NewClient(clientURL)
 	if err != nil {
-		log.Fatalf("Could not create Jira client: %v\n", err)
+		log.Fatalf("could not create Jira client: %v\n", err)
 	}
 
 	err = jiraClient.AuthenticateClient()
 	if err != nil {
-		log.Fatalf("Could not authenticate Jira client with Apache: %v\n", err)
+		log.Fatalf("could not authenticate Jira client with Apache: %v\n", err)
 	}
 
 	numberOfIssues, err := jiraClient.GetNumberOfIssues(*project)
 	if err != nil {
-		log.Fatalf("Could not get total number of issues: %v\n", err)
+		log.Fatalf("could not get total number of issues: %v\n", err)
 	}
 
 	issueSliceSize := math.Ceil(float64(numberOfIssues) / float64(*gortnCnt))
