@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
 	"sync"
 
 	"github.com/nclandrei/L5-Project/analyze"
@@ -71,8 +70,8 @@ func main() {
 	issueSliceSize := math.Ceil(float64(numberOfIssues) / float64(*gortnCnt))
 
 	var wg sync.WaitGroup
-	langIssueCh := make(chan []jira.Issue, 100)
-	dbIssueCh := make(chan []jira.Issue, 100)
+	langIssueCh := make(chan []jira.Issue, *gortnCnt)
+	dbIssueCh := make(chan []jira.Issue, *gortnCnt)
 	doneCh := make(chan struct{})
 
 	go func() {
@@ -82,7 +81,6 @@ func main() {
 				log.Printf("could not add issues to bolt: %v\n", err)
 			}
 		}
-		fmt.Println("DB CHAN DONE")
 		doneCh <- struct{}{}
 	}()
 
@@ -109,10 +107,8 @@ func main() {
 				}
 				ii[i].CommSentiment = score
 			}
-			fmt.Println("SENDING TO DB CHAN")
 			dbIssueCh <- ii
 		}
-		fmt.Println("CLOSING DB ISSUE CHAN")
 		close(dbIssueCh)
 	}()
 
@@ -132,6 +128,5 @@ func main() {
 	wg.Wait()
 
 	close(langIssueCh)
-	fmt.Println("WAITING TO GET DONE")
 	<-doneCh
 }
