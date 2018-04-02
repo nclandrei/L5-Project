@@ -83,23 +83,23 @@ func main() {
 			for _, issue := range ii {
 				bi, err := boltDB.IssueByKey(issue.Key)
 				if err != nil {
-					log.Printf("could not retrieve issue {%s} from bolt: %v\n", ii[i].Key, err)
+					log.Printf("could not retrieve issue {%s} from bolt: %v\n", issue.Key, err)
 					continue
 				}
-				if bi != nil || bi.CommSentiment != 0 {
+				if bi != nil || (bi != nil && bi.CommSentiment != 0) {
 					continue
 				}
-				concatComm, err := analyze.ConcatenateComments(ii[i])
+				concatComm, err := analyze.ConcatenateComments(issue)
 				if err != nil {
-					log.Printf("could not concatenate comments for issue {%s}: %v\n", ii[i].Key, err)
+					log.Printf("could not concatenate comments for issue {%s}: %v\n", issue.Key, err)
 					continue
 				}
 				score, err := langClient.CommSentimentScore(concatComm)
 				if err != nil {
-					log.Printf("could not calculate sentiment score for issue {%s}: %v\n", ii[i].Key, err)
+					log.Printf("could not calculate sentiment score for issue {%s}: %v\n", issue.Key, err)
 					continue
 				}
-				ii[i].CommSentiment = score
+				issue.CommSentiment = score
 			}
 			err = boltDB.InsertIssues(ii...)
 			if err != nil {
