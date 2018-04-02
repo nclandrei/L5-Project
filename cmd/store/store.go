@@ -86,7 +86,7 @@ func main() {
 					log.Printf("could not retrieve issue {%s} from bolt: %v\n", issue.Key, err)
 					continue
 				}
-				if bi != nil || (bi != nil && bi.CommSentiment != 0) {
+				if bi != nil && bi.CommSentiment != 0 {
 					continue
 				}
 				concatComm, err := analyze.ConcatenateComments(issue)
