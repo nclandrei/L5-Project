@@ -11,13 +11,15 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"sync"
 	"time"
 )
 
 // Client defines the client for Jira
 type Client struct {
 	*http.Client
-	URL *url.URL
+	URL  *url.URL
+	lock sync.RWMutex
 }
 
 // SearchResponse defines the response payload retrieved through the search endpoint
@@ -53,8 +55,6 @@ func NewClient(url *url.URL) (*Client, error) {
 		return nil, err
 	}
 
-	// as we are using concurrent requests, increasing TLSHandshake timeout
-	// will most likely avoid errors on the connection
 	transport := &http.Transport{
 		Dial: (&net.Dialer{
 			Timeout:   30 * time.Second,
@@ -75,6 +75,7 @@ func NewClient(url *url.URL) (*Client, error) {
 
 // setSearchPath sets the URL path for JQL search on a Jira client
 func (client *Client) setSearchPath(projectName string, paginationIndex, pageCount int) {
+	client.lock.Lock()
 	client.URL.Path = "/jira/rest/api/2/search"
 	queryValues := make(url.Values)
 	queryValues.Add("jql", fmt.Sprintf("project=%s", projectName))
@@ -83,6 +84,7 @@ func (client *Client) setSearchPath(projectName string, paginationIndex, pageCou
 	queryValues.Add("fields", "summary, created, description, attachment, comment, key, issuetype, timespent, priority, timeestimate, status, duedate, progress")
 	queryValues.Add("expand", "changelog")
 	client.URL.RawQuery = queryValues.Encode()
+	client.lock.Unlock()
 }
 
 // AuthenticateClient authenticates a Jira client with a specific instance of Jira
