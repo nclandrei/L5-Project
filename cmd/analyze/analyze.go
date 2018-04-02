@@ -1,10 +1,7 @@
 package main
 
 import (
-	"context"
 	"log"
-
-	"github.com/nclandrei/L5-Project/gcp"
 
 	"github.com/nclandrei/L5-Project/plot"
 
@@ -12,10 +9,6 @@ import (
 
 	"github.com/nclandrei/L5-Project/db"
 )
-
-// var (
-// 	analysisTask := flag.String("task", "attachments", "")
-// )
 
 func main() {
 	boltDB, err := db.NewBoltDB("/Users/nclandrei/Code/go/src/github.com/nclandrei/L5-Project/users.db")
@@ -28,24 +21,9 @@ func main() {
 		log.Fatalf("could not create new plotter: %v\n", err)
 	}
 
-	langClient, err := gcp.NewLanguageClient(context.Background())
-	if err != nil {
-		log.Fatalf("could not create new language client: %v\n", err)
-	}
-
 	ii, err := boltDB.Issues()
 	if err != nil {
 		log.Fatalf("could not retrieve issues: %v\n", err)
-	}
-
-	for _, issue := range ii {
-		bIssue, err := boltDB.IssueByKey(issue.Key)
-		if err != nil {
-			log.Fatalf("could not retrieve issue {%s} from bolt: %v\n", err)
-		}
-		if bIssue.SentimentScore == nil {
-			commentScorelangClient.SentimentScoreFromText
-		}
 	}
 
 	withAttch, withoutAttch := analyze.AttachmentsAnalysis(ii)
@@ -59,5 +37,11 @@ func main() {
 	err = plotter.DrawPlot("Description Analysis", "#Words", "Time-To-Resolve", wordCountSlice, timeDiffs)
 	if err != nil {
 		log.Fatalf("could not draw comment plot: %v\n", err)
+	}
+
+	sentimentScores, timeDiffs := analyze.SentimentScoreAnalysis(ii)
+	err = plotter.DrawPlot("Sentiment Score Analysis", "Score", "Time-To-Resolve", sentimentScores, timeDiffs)
+	if err != nil {
+		log.Fatalf("could not draw sentiment score plot: %v\n", err)
 	}
 }
