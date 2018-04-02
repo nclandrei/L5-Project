@@ -53,13 +53,13 @@ func AttachmentsAnalysis(issues []jira.Issue) ([]float64, []float64) {
 }
 
 // SentimentScoreAnalysis returns time-to-complete and sentiment scores for input issues.
-func SentimentScoreAnalysis(issues []jira.Issue) ([]float32, []float64) {
-	var scores []float32
+func SentimentScoreAnalysis(issues []jira.Issue) ([]float64, []float64) {
+	var scores []float64
 	var timeDiffs []float64
 	for _, issue := range issues {
 		timeDiff := timeToResolve(issue)
 		if timeDiff > -1 && isIssueHighPriority(issue) {
-			scores = append(scores, issue.CommSentiment)
+			scores = append(scores, float64(issue.CommSentiment))
 			timeDiffs = append(timeDiffs, timeDiff)
 		}
 	}
