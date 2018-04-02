@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"log"
 
 	"github.com/nclandrei/L5-Project/plot"
@@ -10,10 +11,18 @@ import (
 	"github.com/nclandrei/L5-Project/db"
 )
 
+var (
+	dbPath = flag.String(
+		"dbPath",
+		"/Users/nclandrei/Code/go/src/github.com/nclandrei/L5-Project/users.db",
+		"path to Bolt database file",
+	)
+)
+
 func main() {
-	boltDB, err := db.NewBoltDB("/Users/nclandrei/Code/go/src/github.com/nclandrei/L5-Project/users.db")
+	boltDB, err := db.NewBoltDB(*dbPath)
 	if err != nil {
-		log.Fatalf("could not create Bolt DB: %v\n", err)
+		log.Fatalf("could not retrieve database: %v\n", err)
 	}
 
 	plotter, err := plot.NewPlotter()
