@@ -70,6 +70,47 @@ func main() {
 	issueSliceSize := math.Ceil(float64(numberOfIssues) / float64(*gortnCnt))
 
 	var wg sync.WaitGroup
+	langIssueCh := make(chan []jira.Issue)
+	dbIssueCh := make(chan []jira.Issue)
+	doneCh := make(chan struct{})
+
+	go func() {
+		for issues := range dbIssueCh {
+			err = boltDB.InsertIssues(issues...)
+			if err != nil {
+				log.Printf("could not add issues to bolt: %v\n", err)
+			}
+		}
+		doneCh <- struct{}{}
+	}()
+
+	go func() {
+		for ii := range langIssueCh {
+			for i := range ii {
+				bi, err := boltDB.IssueByKey(ii[i].Key)
+				if err != nil {
+					log.Printf("could not retrieve issue {%s} from bolt: %v\n", ii[i].Key, err)
+					continue
+				}
+				if bi != nil && bi.CommSentiment != 0 {
+					continue
+				}
+				concatComm, err := analyze.ConcatenateComments(ii[i])
+				if err != nil {
+					log.Printf("could not concatenate comments for issue {%s}: %v\n", ii[i].Key, err)
+					continue
+				}
+				score, err := langClient.CommSentimentScore(concatComm)
+				if err != nil {
+					log.Printf("could not calculate sentiment score for issue {%s}: %v\n", ii[i].Key, err)
+					continue
+				}
+				ii[i].CommSentiment = score
+			}
+			dbIssueCh <- ii
+		}
+		close(dbIssueCh)
+	}()
 
 	for i := 0; i < *gortnCnt; i++ {
 		wg.Add(1)
@@ -80,33 +121,12 @@ func main() {
 				log.Printf("error while getting issues: %v\n", err)
 				return
 			}
-			for _, issue := range ii {
-				bi, err := boltDB.IssueByKey(issue.Key)
-				if err != nil {
-					log.Printf("could not retrieve issue {%s} from bolt: %v\n", issue.Key, err)
-					continue
-				}
-				if bi != nil && bi.CommSentiment != 0 {
-					continue
-				}
-				concatComm, err := analyze.ConcatenateComments(issue)
-				if err != nil {
-					log.Printf("could not concatenate comments for issue {%s}: %v\n", issue.Key, err)
-					continue
-				}
-				score, err := langClient.CommSentimentScore(concatComm)
-				if err != nil {
-					log.Printf("could not calculate sentiment score for issue {%s}: %v\n", issue.Key, err)
-					continue
-				}
-				issue.CommSentiment = score
-			}
-			err = boltDB.InsertIssues(ii...)
-			if err != nil {
-				log.Printf("could not add issues to bolt: %v\n", err)
-			}
+			langIssueCh <- ii
 		}(i)
 	}
 
 	wg.Wait()
+
+	close(langIssueCh)
+	<-doneCh
 }
