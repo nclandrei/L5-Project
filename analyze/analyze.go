@@ -52,9 +52,18 @@ func AttachmentsAnalysis(issues []jira.Issue) ([]float64, []float64) {
 	return withAttchTimeDiffs, withoutAttchTimeDiffs
 }
 
-// SentimentAnalysis outputs plot for sentiment score variable.
-func SentimentAnalysis(issues []jira.Issue) ([]float64, []float64) {
-	return nil, nil
+// SentimentScoreAnalysis returns time-to-complete and sentiment scores for input issues.
+func SentimentScoreAnalysis(issues []jira.Issue) ([]float32, []float64) {
+	var scores []float32
+	var timeDiffs []float64
+	for _, issue := range issues {
+		timeDiff := timeToResolve(issue)
+		if timeDiff > -1 && isIssueHighPriority(issue) {
+			scores = append(scores, issue.CommSentiment)
+			timeDiffs = append(timeDiffs, timeDiff)
+		}
+	}
+	return scores, timeDiffs
 }
 
 // calculateNumberOfWords returns the number of words in a string.
