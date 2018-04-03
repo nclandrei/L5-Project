@@ -36,13 +36,12 @@ func main() {
 	}
 
 	withAttch, withoutAttch := analyze.AttachmentsAnalysis(ii)
-	wordCountSlice, timeDiffs := analyze.WordinessAnalysis(ii, "description")
-
 	err = plotter.DrawAttachmentsBarchart("Attachments Analysis", "Time-To-Resolve", withAttch, withoutAttch)
 	if err != nil {
 		log.Fatalf("could not draw attachments barchart: %v\n", err)
 	}
 
+	wordCountSlice, timeDiffs := analyze.WordinessAnalysis(ii, "description")
 	err = plotter.DrawPlot("Description Analysis", "#Words", "Time-To-Resolve", wordCountSlice, timeDiffs)
 	if err != nil {
 		log.Fatalf("could not draw comment plot: %v\n", err)
