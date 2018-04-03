@@ -7,7 +7,7 @@ import (
 
 	"github.com/nclandrei/L5-Project/analyze"
 
-	"github.com/nclandrei/L5-Project/gcp"
+	"github.com/nclandrei/L5-Project/language"
 
 	"github.com/nclandrei/L5-Project/db"
 
@@ -47,9 +47,9 @@ func main() {
 		log.Fatalf("could not create Bolt DB: %v\n", err)
 	}
 
-	langClient, err := gcp.NewLanguageClient(context.Background())
+	sentimentClient, err := language.NewSentimentClient(context.Background())
 	if err != nil {
-		log.Fatalf("could not create GCP language client: %v\n", err)
+		log.Fatalf("could not create GCP sentiment client: %v\n", err)
 	}
 
 	jiraClient, err := jira.NewClient(clientURL)
@@ -100,7 +100,7 @@ func main() {
 					log.Printf("could not concatenate comments for issue {%s}: %v\n", ii[i].Key, err)
 					continue
 				}
-				score, err := langClient.CommSentimentScore(concatComm)
+				score, err := sentimentClient.CommentScore(concatComm)
 				if err != nil {
 					log.Printf("could not calculate sentiment score for issue {%s}: %v\n", ii[i].Key, err)
 					continue
