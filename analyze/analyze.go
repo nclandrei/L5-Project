@@ -66,6 +66,10 @@ func SentimentScoreAnalysis(issues []jira.Issue) ([]float64, []float64) {
 	return scores, timeDiffs
 }
 
+func StepsToReproduce(issues []jira.Issue) ([]float64, []float64) {
+	return nil, nil
+}
+
 // calculateNumberOfWords returns the number of words in a string.
 func calculateNumberOfWords(s string) int {
 	wordCount := 0
