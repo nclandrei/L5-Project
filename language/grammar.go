@@ -23,18 +23,18 @@ type GrammarClient struct {
 	path      string
 }
 
-// Response defines the response retrieved via LanguageTool API.
-type Response struct {
-	Matches []Match `json:"matches"`
+// GrammarResponse defines the response retrieved via LanguageTool API.
+type GrammarResponse struct {
+	Matches []GrammarMatch `json:"matches"`
 }
 
-// Match defines a match for an issue found in the parsed text.
-type Match struct {
-	Rule Rule `json:"rule"`
+// GrammarMatch defines a match for an issue found in the parsed text.
+type GrammarMatch struct {
+	Rule GrammarRule `json:"rule"`
 }
 
-// Rule defines all the necessary info needed to understand a grammar error from LanguageTool.
-type Rule struct {
+// GrammarRule defines all the necessary info needed to understand a grammar error from LanguageTool.
+type GrammarRule struct {
 	ID          string `json:"id"`
 	Description string `json:"description"`
 	IssueType   string `json:"issueType"`
@@ -80,7 +80,7 @@ func (client *GrammarClient) Scores(issues ...jira.Issue) ([]int, error) {
 			if err != nil {
 				return scores, err
 			}
-			var jsonResp Response
+			var jsonResp GrammarResponse
 			err = json.Unmarshal(respBody, &jsonResp)
 			if err != nil {
 				return scores, err
