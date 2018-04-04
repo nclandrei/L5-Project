@@ -1,13 +1,8 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"sync"
-
-	"github.com/nclandrei/L5-Project/analyze"
-
-	"github.com/nclandrei/L5-Project/language"
 
 	"github.com/nclandrei/L5-Project/db"
 
@@ -47,11 +42,6 @@ func main() {
 		log.Fatalf("could not create Bolt DB: %v\n", err)
 	}
 
-	sentimentClient, err := language.NewSentimentClient(context.Background())
-	if err != nil {
-		log.Fatalf("could not create GCP sentiment client: %v\n", err)
-	}
-
 	jiraClient, err := jira.NewClient(clientURL)
 	if err != nil {
 		log.Fatalf("could not create Jira client: %v\n", err)
@@ -70,63 +60,21 @@ func main() {
 	issueSliceSize := math.Ceil(float64(numberOfIssues) / float64(*gortnCnt))
 
 	var wg sync.WaitGroup
-	langIssueCh := make(chan []jira.Issue, *gortnCnt)
-	dbIssueCh := make(chan []jira.Issue, *gortnCnt)
-	doneCh := make(chan struct{})
-
-	go func() {
-		for issues := range dbIssueCh {
-			err = boltDB.InsertIssues(issues...)
-			if err != nil {
-				log.Printf("could not add issues to bolt: %v\n", err)
-			}
-		}
-		doneCh <- struct{}{}
-	}()
-
-	go func() {
-		for ii := range langIssueCh {
-			for i := range ii {
-				bi, err := boltDB.IssueByKey(ii[i].Key)
-				if err != nil {
-					log.Printf("could not retrieve issue {%s} from bolt: %v\n", ii[i].Key, err)
-					continue
-				}
-				if bi != nil && bi.CommSentiment != 0 {
-					continue
-				}
-				concatComm, err := analyze.ConcatenateComments(ii[i])
-				if err != nil {
-					log.Printf("could not concatenate comments for issue {%s}: %v\n", ii[i].Key, err)
-					continue
-				}
-				score, err := sentimentClient.CommentScore(concatComm)
-				if err != nil {
-					log.Printf("could not calculate sentiment score for issue {%s}: %v\n", ii[i].Key, err)
-					continue
-				}
-				ii[i].CommSentiment = score
-			}
-			dbIssueCh <- ii
-		}
-		close(dbIssueCh)
-	}()
 
 	for i := 0; i < *gortnCnt; i++ {
 		wg.Add(1)
 		go func(index int) {
 			defer wg.Done()
-			ii, err := jiraClient.GetIssues(*project, index, int(issueSliceSize))
+			issues, err := jiraClient.GetIssues(*project, index, int(issueSliceSize))
 			if err != nil {
 				log.Printf("error while getting issues: %v\n", err)
-				return
 			}
-			langIssueCh <- ii
+			err = boltDB.InsertIssues(issues...)
+			if err != nil {
+				log.Printf("could not add issues to bolt: %v\n", err)
+			}
 		}(i)
 	}
 
 	wg.Wait()
-
-	close(langIssueCh)
-	<-doneCh
 }
