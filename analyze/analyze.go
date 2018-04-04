@@ -59,15 +59,11 @@ func SentimentScoreAnalysis(issues []jira.Issue) ([]float64, []float64) {
 	for _, issue := range issues {
 		timeDiff := timeToResolve(issue)
 		if timeDiff > -1 && isIssueHighPriority(issue) {
-			scores = append(scores, float64(issue.CommSentiment))
+			scores = append(scores, float64(issue.SentimentScore))
 			timeDiffs = append(timeDiffs, timeDiff)
 		}
 	}
 	return scores, timeDiffs
-}
-
-func StepsToReproduce(issues []jira.Issue) ([]float64, []float64) {
-	return nil, nil
 }
 
 // calculateNumberOfWords returns the number of words in a string.
