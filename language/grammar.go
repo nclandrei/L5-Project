@@ -1,3 +1,10 @@
 package language
 
-// use LanguageTool API inside here with a specially designated client
+import (
+	"net/http"
+)
+
+// Client defines the LanguageTool http client.
+type Client struct {
+	*http.Client
+}
