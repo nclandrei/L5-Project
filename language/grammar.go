@@ -17,8 +17,8 @@ const (
 	languageToolAPIPath = "https://languagetool.org/api/v2/check" // URL path to LanguageTool API
 )
 
-// Client defines the LanguageTool http client.
-type Client struct {
+// GrammarClient defines the LanguageTool http client.
+type GrammarClient struct {
 	*http.Client
 	rateLimit int
 	path      string
@@ -46,8 +46,8 @@ type Rule struct {
 }
 
 // NewGrammarClient returns a new Grammar client.
-func NewGrammarClient() *Client {
-	return &Client{
+func NewGrammarClient() *GrammarClient {
+	return &GrammarClient{
 		Client:    http.DefaultClient,
 		rateLimit: clientRateLimit,
 		path:      languageToolAPIPath,
@@ -63,7 +63,7 @@ func newRequestBody(text string) io.Reader {
 }
 
 // Scores returns the grammar scores for all issues passed as arguments.
-func (client *Client) Scores(issues ...jira.Issue) ([]float64, error) {
+func (client *GrammarClient) Scores(issues ...jira.Issue) ([]float64, error) {
 	var scores []float64
 	for i := 0; i < len(issues); i += clientRateLimit {
 		for _, issue := range issues[i:(i + clientRateLimit)] {
