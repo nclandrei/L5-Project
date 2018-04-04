@@ -17,7 +17,7 @@ func main() {
 		log.Fatalf("could not retrieve issues from Bolt DB: %v\n", err)
 	}
 	client := language.NewGrammarClient()
-	scores, err := client.Scores(issues[:41]...)
+	scores, err := client.Scores(issues...)
 	if err != nil {
 		log.Printf("could not retrieve grammar scores for issues: %v\n", err)
 	}
