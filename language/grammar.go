@@ -5,7 +5,6 @@ import (
 	"github.com/nclandrei/L5-Project/jira"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -63,30 +62,30 @@ func newRequestBody(text string) io.Reader {
 }
 
 // Scores returns the grammar scores for all issues passed as arguments.
-func (client *GrammarClient) Scores(issues ...jira.Issue) ([]float64, error) {
-	var scores []float64
+func (client *GrammarClient) Scores(issues ...jira.Issue) ([]int, error) {
+	var scores []int
 	for i := 0; i < len(issues); i += clientRateLimit {
 		for _, issue := range issues[i:(i + clientRateLimit)] {
 			strToAnalyze := strings.Join([]string{issue.Fields.Summary, issue.Fields.Description}, "\n")
 			request, err := http.NewRequest("POST", client.path, newRequestBody(strToAnalyze))
 			if err != nil {
-				return nil, err
+				return scores, err
 			}
 			resp, err := client.Do(request)
 			if err != nil {
-				return nil, err
+				return scores, err
 			}
 			defer resp.Body.Close()
 			respBody, err := ioutil.ReadAll(resp.Body)
 			if err != nil {
-				return nil, err
+				return scores, err
 			}
 			var jsonResp Response
 			err = json.Unmarshal(respBody, &jsonResp)
 			if err != nil {
-				return nil, err
+				return scores, err
 			}
-			log.Println(jsonResp)
+			scores = append(scores, len(jsonResp.Matches))
 		}
 		time.Sleep(1 * time.Minute)
 	}
