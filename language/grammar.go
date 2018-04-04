@@ -9,11 +9,12 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 )
 
 const (
-	clientRateLimit     = 20
-	languageToolAPIPath = "https://languagetool.org/api/v2/check"
+	clientRateLimit     = 20                                      // defines number of requests permitted per minute
+	languageToolAPIPath = "https://languagetool.org/api/v2/check" // URL path to LanguageTool API
 )
 
 // Client defines the LanguageTool http client.
@@ -64,27 +65,30 @@ func newRequestBody(text string) io.Reader {
 // Scores returns the grammar scores for all issues passed as arguments.
 func (client *Client) Scores(issues ...jira.Issue) ([]float64, error) {
 	var scores []float64
-	for _, issue := range issues {
-		strToAnalyze := strings.Join([]string{issue.Fields.Summary, issue.Fields.Description}, "\n")
-		request, err := http.NewRequest("POST", client.path, newRequestBody(strToAnalyze))
-		if err != nil {
-			return nil, err
+	for i := 0; i < len(issues); i += clientRateLimit {
+		for _, issue := range issues[i:(i + clientRateLimit)] {
+			strToAnalyze := strings.Join([]string{issue.Fields.Summary, issue.Fields.Description}, "\n")
+			request, err := http.NewRequest("POST", client.path, newRequestBody(strToAnalyze))
+			if err != nil {
+				return nil, err
+			}
+			resp, err := client.Do(request)
+			if err != nil {
+				return nil, err
+			}
+			defer resp.Body.Close()
+			respBody, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			var jsonResp Response
+			err = json.Unmarshal(respBody, &jsonResp)
+			if err != nil {
+				return nil, err
+			}
+			log.Println(jsonResp)
 		}
-		resp, err := client.Do(request)
-		if err != nil {
-			return nil, err
-		}
-		defer resp.Body.Close()
-		respBody, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return nil, err
-		}
-		var jsonResp Response
-		err = json.Unmarshal(respBody, &jsonResp)
-		if err != nil {
-			return nil, err
-		}
-		log.Println(jsonResp)
+		time.Sleep(1 * time.Minute)
 	}
 	return scores, nil
 }
