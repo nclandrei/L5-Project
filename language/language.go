@@ -168,14 +168,14 @@ func MultipleScores(issues []jira.Issue, scorers ...Scorer) (map[string][]float6
 	var err error
 	for _, scorer := range scorers {
 		wg.Add(1)
-		go func() {
+		go func(scorer Scorer) {
 			defer wg.Done()
 			scores, e := scorer.Scores(issues...)
 			if e != nil {
 				err = e
 			}
 			scoreMap[scorer.Name()] = scores
-		}()
+		}(scorer)
 		if err != nil {
 			break
 		}
