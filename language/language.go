@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 
 	language "cloud.google.com/go/language/apiv1"
@@ -24,7 +25,8 @@ const (
 
 // Scorer defines an interface for holding the different types of language scorers available.
 type Scorer interface {
-	Score(...jira.Issue) ([]float64, error)
+	Scores(...jira.Issue) ([]float64, error)
+	Name() string
 }
 
 // GrammarClient defines the LanguageTool http client.
@@ -70,6 +72,11 @@ func newRequestBody(text string) io.Reader {
 	data.Set("language", "en")
 	data.Set("text", text)
 	return strings.NewReader(data.Encode())
+}
+
+// Name returns the name of the grammar scorer.
+func (client GrammarClient) Name() string {
+	return "GRAMMAR"
 }
 
 // Scores returns the grammar scores for all issues passed as arguments.
@@ -121,6 +128,11 @@ func NewSentimentClient(ctx context.Context) (*SentimentClient, error) {
 	}, nil
 }
 
+// Name returns the name of the GCP Natural Language client.
+func (client SentimentClient) Name() string {
+	return "SENTIMENT"
+}
+
 // Scores calculates the sentiment score for an issue's comments after querying GCP.
 func (client *SentimentClient) Scores(issues ...jira.Issue) ([]float64, error) {
 	scores := make([]float64, len(issues))
@@ -147,4 +159,27 @@ func (client *SentimentClient) Scores(issues ...jira.Issue) ([]float64, error) {
 		time.Sleep(1 * time.Minute)
 	}
 	return scores, nil
+}
+
+// MultipleScores takes multiple issues and scorers and returns a map for each scorer to its corresponding scores.
+func MultipleScores(issues []jira.Issue, scorers ...Scorer) (map[string][]float64, error) {
+	scoreMap := make(map[string][]float64)
+	var wg sync.WaitGroup
+	var err error
+	for _, scorer := range scorers {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			scores, e := scorer.Scores(issues...)
+			if e != nil {
+				err = e
+			}
+			scoreMap[scorer.Name()] = scores
+		}()
+		if err != nil {
+			break
+		}
+	}
+	wg.Wait()
+	return scoreMap, err
 }
