@@ -64,7 +64,7 @@ type Issue struct {
 	Changelog       Changelog `json:"changelog"`
 	TimeToClose     float64
 	SentimentScore  float32
-	GrammarErrCount int
+	GrammarErrCount float64
 }
 
 // Fields defines the fields retrieved via the REST API
