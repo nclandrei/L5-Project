@@ -25,9 +25,28 @@ func main() {
 		log.Fatalf("could not create GCP sentiment client: %v\n", err)
 	}
 
-	scoreMap, err := language.MultipleScores(issues, grammarClient, sentimentClient)
+	scoreMap, err := language.MultipleScores(issues[:31], grammarClient, sentimentClient)
 	if err != nil {
 		log.Fatalf("could not calculate scores: %v\n", err)
 	}
-	log.Println(scoreMap)
+
+	for k, v := range scoreMap {
+		switch k {
+		case "GRAMMAR":
+			for i := range v {
+				issues[i].GrammarErrCount = v[i]
+			}
+			break
+		case "SENTIMENT":
+			for i := range v {
+				issues[i].SentimentScore = v[i]
+			}
+			break
+		}
+	}
+
+	err = boltDB.InsertIssues(issues...)
+	if err != nil {
+		log.Fatalf("could not insert issues back into db: %v\n", err)
+	}
 }
