@@ -84,6 +84,9 @@ func (client *GrammarClient) Scores(issues ...jira.Issue) ([]float64, error) {
 	var scores []float64
 	for i := 0; i < len(issues); i += languageToolRateLimit {
 		for _, issue := range issues[i:(i + languageToolRateLimit)] {
+			if issue.GrammarErrCount != 0 {
+				continue
+			}
 			strToAnalyze := strings.Join([]string{issue.Fields.Summary, issue.Fields.Description}, "\n")
 			request, err := http.NewRequest("POST", client.path, newRequestBody(strToAnalyze))
 			if err != nil {
@@ -138,6 +141,9 @@ func (client *SentimentClient) Scores(issues ...jira.Issue) ([]float64, error) {
 	scores := make([]float64, len(issues))
 	for i := 0; i < len(issues); i += gcpRateLimit {
 		for _, issue := range issues[i:(i + 20)] {
+			if issue.SentimentScore != 0 {
+				continue
+			}
 			concatComm, err := analyze.ConcatenateComments(issue)
 			if err != nil {
 				return scores, err
