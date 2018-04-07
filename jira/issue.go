@@ -63,7 +63,7 @@ type Issue struct {
 	Fields          Fields    `json:"fields"`
 	Changelog       Changelog `json:"changelog"`
 	TimeToClose     float64
-	SentimentScore  float32
+	SentimentScore  float64
 	GrammarErrCount float64
 }
 
