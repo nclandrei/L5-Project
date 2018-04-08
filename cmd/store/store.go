@@ -24,6 +24,7 @@ var (
 	project     = flag.String("project", "Kafka", "name of the project to be queried upon")
 	gortnCnt    = flag.Int("goroutinesCount", maxNoGoroutines, "number of goroutines to be used")
 	dbPath      = flag.String("dbPath", "users.db", "absolute path to the Bolt database")
+	logToFile   = flag.Bool("file_log", false, "specifies whether application should log to file or not")
 	logFilePath = flag.String("log_path", "~/Code/go/src/github.com/nclandrei/L5-Project/log.txt", "path to logging file")
 )
 
@@ -32,7 +33,7 @@ func main() {
 
 	var logger *log.Logger
 
-	if logFilePath == nil {
+	if !*logToFile {
 		logger = log.New(os.Stdout, "jira-store: ", log.Lshortfile)
 	} else {
 		_, err := os.Stat(*logFilePath)
