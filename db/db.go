@@ -116,3 +116,13 @@ func (db *BoltDB) Issues() ([]jira.Issue, error) {
 	})
 	return issues, err
 }
+
+// Cursor returns a cursor to the users inside the bucket/
+func (db *BoltDB) Cursor() (*bolt.Cursor, error) {
+	tx, err := db.Begin(true)
+	if err != nil {
+		return nil, err
+	}
+	b := tx.Bucket([]byte(bucketName))
+	return b.Cursor(), nil
+}
