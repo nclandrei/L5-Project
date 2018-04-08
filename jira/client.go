@@ -65,7 +65,7 @@ func NewClient(url *url.URL) (*Client, error) {
 
 	return &Client{
 		Client: &http.Client{
-			Timeout:   time.Second * 60,
+			Timeout:   time.Second * 90,
 			Jar:       cookieJar,
 			Transport: transport,
 		},
