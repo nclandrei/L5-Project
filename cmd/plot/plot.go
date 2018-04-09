@@ -17,6 +17,7 @@ var (
 		"/Users/nclandrei/Code/go/src/github.com/nclandrei/L5-Project/users.db",
 		"path to Bolt database file",
 	)
+	plotType = flag.String("type", "all", "plot to draw")
 )
 
 func main() {
