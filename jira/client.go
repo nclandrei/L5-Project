@@ -76,7 +76,7 @@ func NewClient(url *url.URL) (*Client, error) {
 // setSearchPath sets the URL path for JQL search on a Jira client
 func (client *Client) setSearchPath(projectName string, paginationIndex, pageCount int) {
 	client.lock.Lock()
-	client.URL.Path = "/jira/rest/api/2/search"
+	client.URL.Path = "/rest/api/2/search"
 	queryValues := make(url.Values)
 	queryValues.Add("jql", fmt.Sprintf("project=%s", projectName))
 	queryValues.Add("startAt", strconv.Itoa(paginationIndex*pageCount))
@@ -97,7 +97,7 @@ func (client *Client) AuthenticateClient() error {
 		os.Getenv("APACHE_JIRA_PASSWORD"),
 	}
 
-	client.URL.Path = "/jira/rest/auth/1/session"
+	client.URL.Path = "/rest/auth/1/session"
 
 	jsonPayload, err := json.Marshal(authenticationRequest)
 	if err != nil {
@@ -146,7 +146,7 @@ func (client *Client) GetIssues(
 
 // GetNumberOfIssues returns the total number of issues for a Jira project
 func (client *Client) GetNumberOfIssues(projectName string) (int, error) {
-	client.URL.Path = "/jira/rest/api/2/search"
+	client.URL.Path = "/rest/api/2/search"
 	client.URL.RawQuery = "jql=project=" + projectName
 	resp, err := client.Get(client.URL.String())
 	if err != nil {
