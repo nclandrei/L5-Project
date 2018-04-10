@@ -4,8 +4,8 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"github.com/nclandrei/L5-Project/analyze"
 	"github.com/nclandrei/L5-Project/db"
-	"github.com/nclandrei/L5-Project/language"
 	"log"
 	"os"
 )
@@ -19,27 +19,27 @@ func main() {
 	flag.Parse()
 
 	var analysisType string
-	clients := make([]language.Scorer, 2)
+	clients := make([]analyze.Scorer, 2)
 	flag.StringVar(&analysisType, "type", "all", "type of analysis to run; available types: grammar,"+
 		" sentiment, all (sentiment and grammar)")
 
 	switch analysisType {
 	case "grammar":
-		clients = append(clients, language.NewGrammarClient())
+		clients = append(clients, analyze.NewGrammarClient())
 		break
 	case "sentiment":
-		sentimentClient, err := language.NewSentimentClient(context.Background())
+		sentimentClient, err := analyze.NewSentimentClient(context.Background())
 		if err != nil {
 			log.Fatalf("could not create GCP sentiment client: %v\n", err)
 		}
 		clients = append(clients, sentimentClient)
 		break
 	case "all":
-		sentimentClient, err := language.NewSentimentClient(context.Background())
+		sentimentClient, err := analyze.NewSentimentClient(context.Background())
 		if err != nil {
 			log.Fatalf("could not create GCP sentiment client: %v\n", err)
 		}
-		clients = append(clients, sentimentClient, language.NewGrammarClient())
+		clients = append(clients, sentimentClient, analyze.NewGrammarClient())
 		break
 	default:
 		fmt.Printf("%s is not a valid analysis type; available types are grammar, sentiment and all", analysisType)
@@ -51,7 +51,7 @@ func main() {
 		log.Fatalf("could not retrieve issues from Bolt DB: %v\n", err)
 	}
 
-	scoreMap, err := language.MultipleScores(issues[:31], clients...)
+	scoreMap, err := analyze.MultipleScores(issues[:31], clients...)
 	if err != nil {
 		log.Fatalf("could not calculate scores: %v\n", err)
 	}
