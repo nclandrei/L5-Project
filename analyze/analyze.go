@@ -1,6 +1,7 @@
 package analyze
 
 import (
+	"regexp"
 	"strings"
 	"time"
 
@@ -64,6 +65,26 @@ func SentimentScoreAnalysis(issues []jira.Issue) ([]float64, []float64) {
 		}
 	}
 	return scores, timeDiffs
+}
+
+// HasStepsToReproduce returns whether an issue has steps to reproduce or not inside either
+// description or any of the comments.
+func HasStepsToReproduce(issue jira.Issue) (bool, error) {
+	regex, err := regexp.Compile(`(\n(\s*)\*(.*)){2,}`)
+	if err != nil {
+		return false, err
+	}
+	locs := regex.FindStringIndex(issue.Fields.Description)
+	if locs != nil {
+		return true, nil
+	}
+	for _, comment := range issue.Fields.Comments.Comments {
+		locs = regex.FindStringIndex(comment.Body)
+		if locs != nil {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 // calculateNumberOfWords returns the number of words in a string.
