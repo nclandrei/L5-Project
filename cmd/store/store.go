@@ -20,7 +20,7 @@ const maxNoGoroutines = 100
 
 // store all the flags
 var (
-	jiraURL     = flag.String("jiraURL", "http://issues.apache.org", "URL for Jira instance")
+	jiraURL     = flag.String("jiraURL", "http://issues.apache.org/jira", "URL for Jira instance")
 	project     = flag.String("project", "Kafka", "name of the project to be queried upon")
 	gortnCnt    = flag.Int("goroutinesCount", maxNoGoroutines, "number of goroutines to be used")
 	dbPath      = flag.String("dbPath", "users.db", "absolute path to the Bolt database")
@@ -55,14 +55,14 @@ func main() {
 		logger.Fatalf("jira URL provided is not a valid URL: %v\n", err)
 	}
 
-	boltDB, err := db.NewBoltDB(*dbPath)
-	if err != nil {
-		logger.Fatalf("could not create Bolt DB: %v\n", err)
-	}
-
 	jiraClient, err := jira.NewClient(clientURL)
 	if err != nil {
 		logger.Fatalf("could not create Jira client: %v\n", err)
+	}
+
+	boltDB, err := db.NewBoltDB(*dbPath)
+	if err != nil {
+		logger.Fatalf("could not create Bolt DB: %v\n", err)
 	}
 
 	err = jiraClient.AuthenticateClient()
