@@ -70,21 +70,55 @@ func SentimentScoreAnalysis(issues []jira.Issue) ([]float64, []float64) {
 // HasStepsToReproduce returns whether an issue has steps to reproduce or not inside either
 // description or any of the comments.
 func HasStepsToReproduce(issue jira.Issue) (bool, error) {
-	regex, err := regexp.Compile(`(\n(\s*)\*(.*)){2,}`)
+	expr := `(\n(\s*)\*(.*)){2,}`
+	contains, err := containsRegex(issue.Fields.Description, expr)
 	if err != nil {
 		return false, err
 	}
-	locs := regex.FindStringIndex(issue.Fields.Description)
-	if locs != nil {
+	if contains {
 		return true, nil
 	}
 	for _, comment := range issue.Fields.Comments.Comments {
-		locs = regex.FindStringIndex(comment.Body)
-		if locs != nil {
+		contains, err = containsRegex(comment.Body, expr)
+		if err != nil {
+			return false, err
+		}
+		if contains {
 			return true, nil
 		}
 	}
 	return false, nil
+}
+
+// HasStackTrace returns whether an issue has a stack trace attached either inside the description
+// or any of the comments.
+func HasStackTrace(issue jira.Issue) (bool, error) {
+	expr := `^.+Exception[^\n]+\n(\s*at.+\s*\n)+`
+	contains, err := containsRegex(issue.Fields.Description, expr)
+	if err != nil {
+		return false, err
+	}
+	if contains {
+		return true, nil
+	}
+	for _, comment := range issue.Fields.Comments.Comments {
+		contains, err = containsRegex(comment.Body, expr)
+		if err != nil {
+			return false, err
+		}
+		if contains {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+func containsRegex(s, expr string) (bool, error) {
+	regex, err := regexp.Compile(expr)
+	if err != nil {
+		return false, err
+	}
+	return regex.FindStringIndex(s) != nil, nil
 }
 
 // calculateNumberOfWords returns the number of words in a string.
