@@ -1,9 +1,8 @@
-package language
+package analyze
 
 import (
 	"context"
 	"encoding/json"
-	"github.com/nclandrei/L5-Project/analyze"
 	"github.com/nclandrei/L5-Project/jira"
 	"io"
 	"io/ioutil"
@@ -144,7 +143,7 @@ func (client *SentimentClient) Scores(issues ...jira.Issue) ([]float64, error) {
 			if issue.SentimentScore != 0 {
 				continue
 			}
-			concatComm, err := analyze.ConcatenateComments(issue)
+			concatComm, err := concatenateComments(issue)
 			if err != nil {
 				return scores, err
 			}
