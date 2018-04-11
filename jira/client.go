@@ -65,7 +65,7 @@ func NewClient(url *url.URL) (*Client, error) {
 
 	return &Client{
 		Client: &http.Client{
-			Timeout:   time.Second * 90,
+			Timeout:   time.Minute * 3,
 			Jar:       cookieJar,
 			Transport: transport,
 		},
@@ -93,8 +93,8 @@ func (client *Client) AuthenticateClient() error {
 		Username string `json:"username"`
 		Password string `json:"password"`
 	}{
-		os.Getenv("APACHE_JIRA_USERNAME"),
-		os.Getenv("APACHE_JIRA_PASSWORD"),
+		os.Getenv("JIRA_USERNAME"),
+		os.Getenv("JIRA_PASSWORD"),
 	}
 
 	client.URL.Path = "/rest/auth/1/session"
