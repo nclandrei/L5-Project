@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"github.com/joho/godotenv"
 	"os"
 	"sync"
 
@@ -46,6 +47,11 @@ func main() {
 		}
 	}
 
+	err := godotenv.Load()
+	if err != nil {
+		logger.Fatalf("could not load .env file: %v\n", err)
+	}
+
 	if *gortnCnt > maxNoGoroutines {
 		logger.Fatalf("cannot have more than maximum number of goroutines... exiting now\n")
 	}
@@ -67,7 +73,7 @@ func main() {
 
 	err = jiraClient.AuthenticateClient()
 	if err != nil {
-		logger.Fatalf("could not authenticate Jira client with Apache: %v\n", err)
+		logger.Fatalf("could not authenticate Jira client: %v\n", err)
 	}
 
 	numberOfIssues, err := jiraClient.GetNumberOfIssues(*project)
