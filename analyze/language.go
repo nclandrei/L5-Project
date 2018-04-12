@@ -19,7 +19,9 @@ import (
 const (
 	languageToolRateLimit = 20                                      // defines number of requests permitted per minute
 	gcpRateLimit          = 600                                     // defines the GCP Natural Language API rate limit per minute
+	bingRateLimit         = 6000                                    // defines Bing Spell Check API rate limit per minute
 	languageToolAPIPath   = "https://languagetool.org/api/v2/check" // URL path to LanguageTool API
+	bingAPIPath           = "https://api.cognitive.microsoft.com/bing/v7.0/SpellCheck"
 )
 
 // Scorer defines an interface for holding the different types of language scorers available.
@@ -28,25 +30,25 @@ type Scorer interface {
 	Name() string
 }
 
-// GrammarClient defines the LanguageTool http client.
-type GrammarClient struct {
+// LanguageToolClient defines the LanguageTool http client.
+type LanguageToolClient struct {
 	*http.Client
 	rateLimit int
 	path      string
 }
 
-// GrammarResponse defines the response retrieved via LanguageTool API.
-type GrammarResponse struct {
-	Matches []GrammarMatch `json:"matches"`
+// LanguageToolResponse defines the response retrieved via LanguageTool API.
+type LanguageToolResponse struct {
+	Matches []LanguageToolMatch `json:"matches"`
 }
 
-// GrammarMatch defines a match for an issue found in the parsed text.
-type GrammarMatch struct {
-	Rule GrammarRule `json:"rule"`
+// LanguageToolMatch defines a match for an issue found in the parsed text.
+type LanguageToolMatch struct {
+	Rule LanguageToolRule `json:"rule"`
 }
 
-// GrammarRule defines all the necessary info needed to understand a grammar error from LanguageTool.
-type GrammarRule struct {
+// LanguageToolRule defines all the necessary info needed to understand a LanguageTool error from LanguageTool.
+type LanguageToolRule struct {
 	ID          string `json:"id"`
 	Description string `json:"description"`
 	IssueType   string `json:"issueType"`
@@ -56,9 +58,9 @@ type GrammarRule struct {
 	} `json:"category"`
 }
 
-// NewGrammarClient returns a new Grammar client.
-func NewGrammarClient() *GrammarClient {
-	return &GrammarClient{
+// NewLanguageToolClient returns a new LanguageTool client.
+func NewLanguageToolClient() *LanguageToolClient {
+	return &LanguageToolClient{
 		Client:    http.DefaultClient,
 		rateLimit: languageToolRateLimit,
 		path:      languageToolAPIPath,
@@ -73,13 +75,13 @@ func newRequestBody(text string) io.Reader {
 	return strings.NewReader(data.Encode())
 }
 
-// Name returns the name of the grammar scorer.
-func (client GrammarClient) Name() string {
-	return "GRAMMAR"
+// Name returns the name of the LanguageTool scorer.
+func (client LanguageToolClient) Name() string {
+	return "LanguageTool"
 }
 
-// Scores returns the grammar scores for all issues passed as arguments.
-func (client *GrammarClient) Scores(issues ...jira.Issue) ([]float64, error) {
+// Scores returns the LanguageTool scores for all issues passed as arguments.
+func (client *LanguageToolClient) Scores(issues ...jira.Issue) ([]float64, error) {
 	var scores []float64
 	for i := 0; i < len(issues); i += languageToolRateLimit {
 		for _, issue := range issues[i:(i + languageToolRateLimit)] {
@@ -100,12 +102,82 @@ func (client *GrammarClient) Scores(issues ...jira.Issue) ([]float64, error) {
 			if err != nil {
 				return scores, err
 			}
-			var jsonResp GrammarResponse
+			var jsonResp LanguageToolResponse
 			err = json.Unmarshal(respBody, &jsonResp)
 			if err != nil {
 				return scores, err
 			}
 			scores = append(scores, float64(len(jsonResp.Matches)))
+		}
+		time.Sleep(1 * time.Minute)
+	}
+	return scores, nil
+}
+
+// BingClient defines a new Bing Spell Check client.
+type BingClient struct {
+	*http.Client
+	key string
+}
+
+// BingResponse holds responses retrieved from Bing Spell Check API.
+type BingResponse struct {
+	Type          string `json:"-"`
+	FlaggedTokens []BingFlaggedToken
+}
+
+// BingFlaggedToken holds information regarding flagged tokens inside the text passed in the request.
+type BingFlaggedToken struct {
+	Offset int    `json:"offset"`
+	Token  string `json:"token"`
+	Type   string `json:"type"`
+}
+
+// NewBingClient returns a new Bing Spell Check API client.
+func NewBingClient(key string) *BingClient {
+	return &BingClient{
+		Client: &http.Client{},
+		key:    key,
+	}
+}
+
+// Name returns the name of the Bing client.
+func (client *BingClient) Name() string {
+	return "SPELL_CHECK"
+}
+
+// Scores returns the grammar correctness scores for all issues given as input parameters.
+func (client *BingClient) Scores(issues ...jira.Issue) ([]float64, error) {
+	scores := make([]float64, len(issues))
+	for i := 0; i < len(issues); i += bingRateLimit {
+		for _, issue := range issues[i:(i + bingRateLimit)] {
+			strToAnalyze := strings.Join([]string{issue.Fields.Summary, issue.Fields.Description}, "\n")
+			values := url.Values{}
+			values.Set("Text", strToAnalyze)
+			req, err := http.NewRequest(
+				"POST",
+				bingAPIPath,
+				strings.NewReader(values.Encode()),
+			)
+			if err != nil {
+				return scores, err
+			}
+			req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+			req.Header.Add("Ocp-Apim-Subscription-Key", client.key)
+			resp, err := http.DefaultClient.Do(req)
+			if err != nil {
+				return scores, err
+			}
+			defer resp.Body.Close()
+			body, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				return scores, err
+			}
+			respBody := make(map[string]interface{})
+			err = json.Unmarshal(body, &respBody)
+			if err != nil {
+				return scores, err
+			}
 		}
 		time.Sleep(1 * time.Minute)
 	}
