@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"github.com/joho/godotenv"
 	"github.com/nclandrei/L5-Project/analyze"
 	"github.com/nclandrei/L5-Project/db"
 	"log"
@@ -18,14 +19,22 @@ func main() {
 
 	flag.Parse()
 
+	err = godotenv.Load()
+	if err != nil {
+		log.Fatalf("could not load .env file: %v\n", err)
+	}
+
 	var analysisType string
-	clients := make([]analyze.Scorer, 2)
-	flag.StringVar(&analysisType, "type", "all", "type of analysis to run; available types: grammar,"+
-		" sentiment, all (sentiment and grammar)")
+	clients := make([]analyze.Scorer, 3)
+	flag.StringVar(&analysisType, "type", "all", "type of analysis to run; available types: langTool,"+
+		" sentiment, bing, all (sentiment, langTool, bing spell check)")
 
 	switch analysisType {
-	case "grammar":
-		clients = append(clients, analyze.NewGrammarClient())
+	case "langTool":
+		clients = append(clients, analyze.NewLanguageToolClient())
+		break
+	case "bing":
+		clients = append(clients, analyze.NewBingClient(os.Getenv("BING_KEY_1")))
 		break
 	case "sentiment":
 		sentimentClient, err := analyze.NewSentimentClient(context.Background())
@@ -34,15 +43,17 @@ func main() {
 		}
 		clients = append(clients, sentimentClient)
 		break
-	case "spellCheck":
-		clients = append(clients, analyze.NewBingClient(os.Getenv("BING_KEY_1")))
-		break
 	case "all":
 		sentimentClient, err := analyze.NewSentimentClient(context.Background())
 		if err != nil {
 			log.Fatalf("could not create GCP sentiment client: %v\n", err)
 		}
-		clients = append(clients, sentimentClient, analyze.NewGrammarClient(), analyze.NewBingClient(os.Getenv("BING_KEY_1")))
+		clients = append(
+			clients,
+			sentimentClient,
+			analyze.NewLanguageToolClient(),
+			analyze.NewBingClient(os.Getenv("BING_KEY_1")),
+		)
 		break
 	default:
 		fmt.Printf("%s is not a valid analysis type; available types are grammar, sentiment and all", analysisType)
@@ -54,7 +65,7 @@ func main() {
 		log.Fatalf("could not retrieve issues from Bolt DB: %v\n", err)
 	}
 
-	scoreMap, err := analyze.MultipleScores(issues[:31], clients...)
+	scoreMap, err := analyze.MultipleScores(issues[:10], clients...)
 	if err != nil {
 		log.Fatalf("could not calculate scores: %v\n", err)
 	}
@@ -71,11 +82,15 @@ func main() {
 				issues[i].SentimentScore = v[i]
 			}
 			break
+		case "SPELL_CHECK":
+			for i := range v {
+				issues[i].GrammarErrCount = v[i]
+			}
 		}
-	}
 
-	err = boltDB.InsertIssues(issues...)
-	if err != nil {
-		log.Fatalf("could not insert issues back into db: %v\n", err)
+		err = boltDB.InsertIssues(issues...)
+		if err != nil {
+			log.Fatalf("could not insert issues back into db: %v\n", err)
+		}
 	}
 }
