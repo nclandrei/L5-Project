@@ -34,12 +34,15 @@ func main() {
 		}
 		clients = append(clients, sentimentClient)
 		break
+	case "spellCheck":
+		clients = append(clients, analyze.NewBingClient(os.Getenv("BING_KEY_1")))
+		break
 	case "all":
 		sentimentClient, err := analyze.NewSentimentClient(context.Background())
 		if err != nil {
 			log.Fatalf("could not create GCP sentiment client: %v\n", err)
 		}
-		clients = append(clients, sentimentClient, analyze.NewGrammarClient())
+		clients = append(clients, sentimentClient, analyze.NewGrammarClient(), analyze.NewBingClient(os.Getenv("BING_KEY_1")))
 		break
 	default:
 		fmt.Printf("%s is not a valid analysis type; available types are grammar, sentiment and all", analysisType)
