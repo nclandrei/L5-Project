@@ -83,8 +83,14 @@ func (client LanguageToolClient) Name() string {
 // Scores returns the LanguageTool scores for all issues passed as arguments.
 func (client *LanguageToolClient) Scores(issues ...jira.Issue) ([]float64, error) {
 	var scores []float64
-	for i := 0; i < len(issues); i += languageToolRateLimit {
-		for _, issue := range issues[i:(i + languageToolRateLimit)] {
+	var rateLimit int
+	if languageToolRateLimit > len(issues) {
+		rateLimit = len(issues)
+	} else {
+		rateLimit = languageToolRateLimit
+	}
+	for i := 0; i < len(issues); i += rateLimit {
+		for _, issue := range issues[i:(i + rateLimit)] {
 			if issue.GrammarErrCount != 0 {
 				continue
 			}
@@ -148,9 +154,15 @@ func (client *BingClient) Name() string {
 
 // Scores returns the grammar correctness scores for all issues given as input parameters.
 func (client *BingClient) Scores(issues ...jira.Issue) ([]float64, error) {
-	scores := make([]float64, len(issues))
-	for i := 0; i < len(issues); i += bingRateLimit {
-		for _, issue := range issues[i:(i + bingRateLimit)] {
+	var scores []float64
+	var rateLimit int
+	if bingRateLimit > len(issues) {
+		rateLimit = len(issues)
+	} else {
+		rateLimit = bingRateLimit
+	}
+	for i := 0; i < len(issues); i += rateLimit {
+		for _, issue := range issues[i:(i + rateLimit)] {
 			strToAnalyze := strings.Join([]string{issue.Fields.Summary, issue.Fields.Description}, "\n")
 			values := url.Values{}
 			values.Set("Text", strToAnalyze)
@@ -211,8 +223,14 @@ func (client SentimentClient) Name() string {
 // Scores calculates the sentiment score for an issue's comments after querying GCP.
 func (client *SentimentClient) Scores(issues ...jira.Issue) ([]float64, error) {
 	scores := make([]float64, len(issues))
-	for i := 0; i < len(issues); i += gcpRateLimit {
-		for _, issue := range issues[i:(i + 20)] {
+	var rateLimit int
+	if gcpRateLimit > len(issues) {
+		rateLimit = len(issues)
+	} else {
+		rateLimit = gcpRateLimit
+	}
+	for i := 0; i < len(issues); i += rateLimit {
+		for _, issue := range issues[i:(i + rateLimit)] {
 			if issue.SentimentScore != 0 {
 				continue
 			}
