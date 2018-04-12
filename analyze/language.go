@@ -77,7 +77,7 @@ func newRequestBody(text string) io.Reader {
 
 // Name returns the name of the LanguageTool scorer.
 func (client LanguageToolClient) Name() string {
-	return "LanguageTool"
+	return "LANG_TOOL"
 }
 
 // Scores returns the LanguageTool scores for all issues passed as arguments.
@@ -143,7 +143,7 @@ func NewBingClient(key string) *BingClient {
 
 // Name returns the name of the Bing client.
 func (client *BingClient) Name() string {
-	return "SPELL_CHECK"
+	return "BING"
 }
 
 // Scores returns the grammar correctness scores for all issues given as input parameters.
