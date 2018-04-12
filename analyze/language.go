@@ -173,11 +173,12 @@ func (client *BingClient) Scores(issues ...jira.Issue) ([]float64, error) {
 			if err != nil {
 				return scores, err
 			}
-			respBody := make(map[string]interface{})
-			err = json.Unmarshal(body, &respBody)
+			bingResponse := &BingResponse{}
+			err = json.Unmarshal(body, bingResponse)
 			if err != nil {
 				return scores, err
 			}
+			scores = append(scores, float64(len(bingResponse.FlaggedTokens)))
 		}
 		time.Sleep(1 * time.Minute)
 	}
