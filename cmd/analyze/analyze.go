@@ -28,7 +28,7 @@ func main() {
 		log.Fatalf("could not load .env file: %v\n", err)
 	}
 
-	clients := make([]analyze.Scorer, 3)
+	var clients []analyze.Scorer
 
 	switch analysisType {
 	case "langTool":
@@ -57,7 +57,7 @@ func main() {
 		)
 		break
 	default:
-		fmt.Printf("%s is not a valid analysis type; available types are grammar, sentiment and all", analysisType)
+		fmt.Printf("%s is not a valid analysis type; available types are langTool, bing, sentiment and all", analysisType)
 		os.Exit(1)
 	}
 
@@ -73,7 +73,7 @@ func main() {
 
 	for k, v := range scoreMap {
 		switch k {
-		case "GRAMMAR":
+		case "LANG_TOOL":
 			for i := range v {
 				issues[i].GrammarErrCount = v[i]
 			}
@@ -83,7 +83,7 @@ func main() {
 				issues[i].SentimentScore = v[i]
 			}
 			break
-		case "SPELL_CHECK":
+		case "BING":
 			for i := range v {
 				issues[i].GrammarErrCount = v[i]
 			}
