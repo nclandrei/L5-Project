@@ -17,6 +17,10 @@ func main() {
 		log.Fatalf("could not access Bolt DB: %v\n", err)
 	}
 
+	var analysisType string
+	flag.StringVar(&analysisType, "type", "all", "type of analysis to run; available types: langTool,"+
+		" sentiment, bing, all (sentiment, langTool, bing spell check)")
+
 	flag.Parse()
 
 	err = godotenv.Load()
@@ -24,10 +28,7 @@ func main() {
 		log.Fatalf("could not load .env file: %v\n", err)
 	}
 
-	var analysisType string
 	clients := make([]analyze.Scorer, 3)
-	flag.StringVar(&analysisType, "type", "all", "type of analysis to run; available types: langTool,"+
-		" sentiment, bing, all (sentiment, langTool, bing spell check)")
 
 	switch analysisType {
 	case "langTool":
