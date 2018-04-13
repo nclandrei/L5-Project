@@ -3,6 +3,7 @@ package analyze
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/nclandrei/L5-Project/jira"
 	"io/ioutil"
 	"net/http"
@@ -15,17 +16,14 @@ import (
 )
 
 const (
-	languageToolRateLimit = 20                                      // defines number of requests permitted per minute
-	gcpRateLimit          = 600                                     // defines the GCP Natural Language API rate limit per minute
-	bingRateLimit         = 100                                     // defines Bing Spell Check API rate limit per second
-	languageToolAPIPath   = "https://languagetool.org/api/v2/check" // URL path to LanguageTool API
-	bingAPIPath           = "https://api.cognitive.microsoft.com/bing/v7.0/SpellCheck"
+	gcpRateLimit  = 600 // defines the GCP Natural Language API rate limit per minute
+	bingRateLimit = 100 // defines Bing Spell Check API rate limit per second
+	bingAPIPath   = "https://api.cognitive.microsoft.com/bing/v7.0/SpellCheck"
 )
 
 // Scorer defines an interface for holding the different types of language scorers available.
 type Scorer interface {
-	Scores(...jira.Issue) ([]float64, error)
-	Name() string
+	Scores(...jira.Issue) error
 }
 
 // BingClient defines a new Bing Spell Check client.
@@ -55,14 +53,8 @@ func NewBingClient(key string) *BingClient {
 	}
 }
 
-// Name returns the name of the Bing client.
-func (client *BingClient) Name() string {
-	return "GRAMMAR"
-}
-
 // Scores returns the grammar correctness scores for all issues given as input parameters.
-func (client *BingClient) Scores(issues ...jira.Issue) ([]float64, error) {
-	var scores []float64
+func (client *BingClient) Scores(issues ...jira.Issue) error {
 	errCh := make(chan error, len(issues))
 	var rateLimit int
 	if bingRateLimit > len(issues) {
@@ -71,9 +63,13 @@ func (client *BingClient) Scores(issues ...jira.Issue) ([]float64, error) {
 		rateLimit = bingRateLimit
 	}
 	for i := 0; i < len(issues); i += rateLimit {
-		for _, issue := range issues[i:(i + rateLimit)] {
-			go func(issue jira.Issue) {
-				strToAnalyze, err := concatAndRemoveNewlines(issue.Fields.Summary, issue.Fields.Description)
+		for j := range issues[i:(i + rateLimit)] {
+			go func(i, j int) {
+				if issues[i+j].GrammarCorrectness.HasScore {
+					errCh <- nil
+					return
+				}
+				strToAnalyze, err := concatAndRemoveNewlines(issues[i+j].Fields.Summary, issues[i+j].Fields.Description)
 				if err != nil {
 					errCh <- err
 					return
@@ -108,18 +104,25 @@ func (client *BingClient) Scores(issues ...jira.Issue) ([]float64, error) {
 					errCh <- err
 					return
 				}
-				scores = append(scores, float64(len(bingResponse.FlaggedTokens)))
+				issues[i+j].GrammarCorrectness.Score = len(bingResponse.FlaggedTokens)
+				issues[i+j].GrammarCorrectness.HasScore = true
 				errCh <- nil
-			}(issue)
+			}(i, j)
 		}
 		time.Sleep(1 * time.Second)
 	}
+	var strBuilder strings.Builder
 	for i := 0; i < len(issues); i++ {
 		if err := <-errCh; err != nil {
-			return scores, err
+			strBuilder.WriteString("error while retrieving grammar scores: ")
+			strBuilder.WriteString(err.Error())
+			strBuilder.WriteRune('\n')
 		}
 	}
-	return scores, nil
+	if strBuilder.Len() > 0 {
+		return fmt.Errorf(strBuilder.String())
+	}
+	return nil
 }
 
 // SentimentClient defines a GCP Language Client
@@ -140,14 +143,8 @@ func NewSentimentClient(ctx context.Context) (*SentimentClient, error) {
 	}, nil
 }
 
-// Name returns the name of the GCP Natural Language client.
-func (client SentimentClient) Name() string {
-	return "SENTIMENT"
-}
-
 // Scores calculates the sentiment score for an issue's comments after querying GCP.
-func (client *SentimentClient) Scores(issues ...jira.Issue) ([]float64, error) {
-	scores := make([]float64, len(issues))
+func (client *SentimentClient) Scores(issues ...jira.Issue) error {
 	errCh := make(chan error, len(issues))
 	var rateLimit int
 	if gcpRateLimit > len(issues) {
@@ -156,12 +153,12 @@ func (client *SentimentClient) Scores(issues ...jira.Issue) ([]float64, error) {
 		rateLimit = gcpRateLimit
 	}
 	for i := 0; i < len(issues); i += rateLimit {
-		for _, issue := range issues[i:(i + rateLimit)] {
-			go func(issue jira.Issue) {
-				if issue.SentimentScore != 0 {
+		for j := range issues[i:(i + rateLimit)] {
+			go func(i, j int) {
+				if issues[i+j].Sentiment.HasScore {
 					return
 				}
-				concatComm, err := concatenateComments(issue)
+				concatComm, err := concatenateComments(issues[i+j])
 				if err != nil {
 					errCh <- err
 					return
@@ -179,39 +176,39 @@ func (client *SentimentClient) Scores(issues ...jira.Issue) ([]float64, error) {
 					errCh <- err
 					return
 				}
-				scores = append(scores, float64(sentiment.DocumentSentiment.Score))
+				issues[i+j].Sentiment.HasScore = true
+				issues[i+j].Sentiment.Score = float64(sentiment.DocumentSentiment.Score)
 				errCh <- nil
-			}(issue)
+			}(i, j)
 		}
 		time.Sleep(1 * time.Minute)
 	}
+	var strBuilder strings.Builder
 	for i := 0; i < len(issues); i++ {
 		if err := <-errCh; err != nil {
-			return scores, err
+			strBuilder.WriteString("error while retrieving sentiment scores: ")
+			strBuilder.WriteString(err.Error())
+			strBuilder.WriteRune('\n')
 		}
 	}
-	return scores, nil
+	if strBuilder.Len() > 0 {
+		return fmt.Errorf(strBuilder.String())
+	}
+	return nil
 }
 
 // MultipleScores takes multiple issues and scorers and returns a map for each scorer to its corresponding scores.
-func MultipleScores(issues []jira.Issue, scorers ...Scorer) (map[string][]float64, error) {
-	scoreMap := make(map[string][]float64)
+func MultipleScores(issues []jira.Issue, scorers ...Scorer) error {
 	errCh := make(chan error, len(scorers))
 	for i := range scorers {
-		go func(index int) {
-			scores, err := scorers[index].Scores(issues...)
-			if err != nil {
-				errCh <- err
-			} else {
-				scoreMap[scorers[index].Name()] = scores
-				errCh <- nil
-			}
+		go func(i int) {
+			errCh <- scorers[i].Scores(issues...)
 		}(i)
 	}
 	for i := 0; i < len(scorers); i++ {
 		if err := <-errCh; err != nil {
-			return scoreMap, err
+			return err
 		}
 	}
-	return scoreMap, nil
+	return nil
 }
