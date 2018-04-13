@@ -19,7 +19,7 @@ import (
 const (
 	languageToolRateLimit = 20                                      // defines number of requests permitted per minute
 	gcpRateLimit          = 600                                     // defines the GCP Natural Language API rate limit per minute
-	bingRateLimit         = 6000                                    // defines Bing Spell Check API rate limit per minute
+	bingRateLimit         = 100                                     // defines Bing Spell Check API rate limit per second
 	languageToolAPIPath   = "https://languagetool.org/api/v2/check" // URL path to LanguageTool API
 	bingAPIPath           = "https://api.cognitive.microsoft.com/bing/v7.0/SpellCheck"
 )
@@ -154,7 +154,6 @@ func (client *BingClient) Name() string {
 
 // Scores returns the grammar correctness scores for all issues given as input parameters.
 func (client *BingClient) Scores(issues ...jira.Issue) ([]float64, error) {
-	defer fmt.Println("FINISHED")
 	var scores []float64
 	errCh := make(chan error, len(issues))
 	var rateLimit int
@@ -165,9 +164,8 @@ func (client *BingClient) Scores(issues ...jira.Issue) ([]float64, error) {
 	}
 	for i := 0; i < len(issues); i += rateLimit {
 		for i := range issues[i:(i + rateLimit)] {
-			go func(i int) {
-				strToAnalyze := strings.Join([]string{issues[i].Fields.Summary, issues[i].Fields.Description}, "\n")
-				fmt.Printf("string to analyze for issue {%s}: %s\n", issues[i].Key, strToAnalyze)
+			go func(index int) {
+				strToAnalyze := strings.Join([]string{issues[index].Fields.Summary, issues[index].Fields.Description}, "\n")
 				values := url.Values{}
 				values.Set("Text", strToAnalyze)
 				req, err := http.NewRequest(
@@ -177,28 +175,33 @@ func (client *BingClient) Scores(issues ...jira.Issue) ([]float64, error) {
 				)
 				if err != nil {
 					errCh <- err
+					return
 				}
 				req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 				req.Header.Add("Ocp-Apim-Subscription-Key", client.key)
-				resp, err := http.DefaultClient.Do(req)
+				resp, err := client.Do(req)
 				if err != nil {
 					errCh <- err
+					return
 				}
 				defer resp.Body.Close()
 				body, err := ioutil.ReadAll(resp.Body)
 				if err != nil {
 					errCh <- err
+					return
 				}
 				bingResponse := &BingResponse{}
 				err = json.Unmarshal(body, bingResponse)
 				if err != nil {
 					errCh <- err
+					return
 				}
+				fmt.Printf("bing response: \n %v\n\n\n", bingResponse)
 				scores = append(scores, float64(len(bingResponse.FlaggedTokens)))
 				errCh <- nil
 			}(i)
 		}
-		time.Sleep(1 * time.Minute)
+		time.Sleep(1 * time.Second)
 	}
 	for i := 0; i < len(issues); i++ {
 		if err := <-errCh; err != nil {
@@ -270,18 +273,17 @@ func (client *SentimentClient) Scores(issues ...jira.Issue) ([]float64, error) {
 
 // MultipleScores takes multiple issues and scorers and returns a map for each scorer to its corresponding scores.
 func MultipleScores(issues []jira.Issue, scorers ...Scorer) (map[string][]float64, error) {
-	defer fmt.Println("finished getting all scores")
 	scoreMap := make(map[string][]float64)
 	errCh := make(chan error, len(scorers))
-	for _, scorer := range scorers {
-		go func(scorer Scorer) {
-			scores, err := scorer.Scores(issues...)
+	for i := range scorers {
+		go func(index int) {
+			scores, err := scorers[index].Scores(issues...)
 			if err != nil {
 				errCh <- err
 			} else {
-				scoreMap[scorer.Name()] = scores
+				scoreMap[scorers[index].Name()] = scores
 			}
-		}(scorer)
+		}(i)
 	}
 	for i := 0; i < len(scorers); i++ {
 		if err := <-errCh; err != nil {
