@@ -163,6 +163,24 @@ func getAttachmentType(filename string) jira.AttachmentType {
 	}
 }
 
+// concatAndRemoveNewLines takes a variadic number of strings and returns a concatenated form with
+// all of them having newlines replaced by whitespaces.
+func concatAndRemoveNewlines(strs ...string) (string, error) {
+	var strBuilder strings.Builder
+	for _, str := range strs {
+		str = strings.Replace(str, "\n", " ", -1)
+		_, err := strBuilder.WriteString(str)
+		if err != nil {
+			return "", err
+		}
+		_, err = strBuilder.WriteRune(' ')
+		if err != nil {
+			return "", err
+		}
+	}
+	return strBuilder.String(), nil
+}
+
 // ConcatenateComments returns a string containing all the comment bodies concatenated.
 func concatenateComments(issue jira.Issue) (string, error) {
 	var builder strings.Builder
