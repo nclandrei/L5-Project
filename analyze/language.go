@@ -3,9 +3,7 @@ package analyze
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"github.com/nclandrei/L5-Project/jira"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -28,99 +26,6 @@ const (
 type Scorer interface {
 	Scores(...jira.Issue) ([]float64, error)
 	Name() string
-}
-
-// LanguageToolClient defines the LanguageTool http client.
-type LanguageToolClient struct {
-	*http.Client
-	rateLimit int
-	path      string
-}
-
-// LanguageToolResponse defines the response retrieved via LanguageTool API.
-type LanguageToolResponse struct {
-	Matches []LanguageToolMatch `json:"matches"`
-}
-
-// LanguageToolMatch defines a match for an issue found in the parsed text.
-type LanguageToolMatch struct {
-	Rule LanguageToolRule `json:"rule"`
-}
-
-// LanguageToolRule defines all the necessary info needed to understand a LanguageTool error from LanguageTool.
-type LanguageToolRule struct {
-	ID          string `json:"id"`
-	Description string `json:"description"`
-	IssueType   string `json:"issueType"`
-	Category    struct {
-		ID   string `json:"id"`
-		Name string `json:"name"`
-	} `json:"category"`
-}
-
-// NewLanguageToolClient returns a new LanguageTool client.
-func NewLanguageToolClient() *LanguageToolClient {
-	return &LanguageToolClient{
-		Client:    http.DefaultClient,
-		rateLimit: languageToolRateLimit,
-		path:      languageToolAPIPath,
-	}
-}
-
-// newRequestBody returns a request body for a LanguageTool API call.
-func newRequestBody(text string) io.Reader {
-	data := url.Values{}
-	data.Set("language", "en")
-	data.Set("text", text)
-	return strings.NewReader(data.Encode())
-}
-
-// Name returns the name of the LanguageTool scorer.
-func (client LanguageToolClient) Name() string {
-	return "LANG_TOOL"
-}
-
-// Scores returns the LanguageTool scores for all issues passed as arguments.
-func (client *LanguageToolClient) Scores(issues ...jira.Issue) ([]float64, error) {
-	var scores []float64
-	var rateLimit int
-	if languageToolRateLimit > len(issues) {
-		rateLimit = len(issues)
-	} else {
-		rateLimit = languageToolRateLimit
-	}
-	for i := 0; i < len(issues); i += rateLimit {
-		for _, issue := range issues[i:(i + rateLimit)] {
-			if issue.GrammarErrCount != 0 {
-				continue
-			}
-			strToAnalyze, err := concatAndRemoveNewlines(issue.Fields.Summary, issue.Fields.Description)
-			if err != nil {
-				return scores, err
-			}
-			request, err := http.NewRequest("POST", client.path, newRequestBody(strToAnalyze))
-			if err != nil {
-				return scores, err
-			}
-			resp, err := client.Do(request)
-			if err != nil {
-				return scores, err
-			}
-			defer resp.Body.Close()
-			respBody, err := ioutil.ReadAll(resp.Body)
-			if err != nil {
-				return scores, err
-			}
-			var jsonResp LanguageToolResponse
-			err = json.Unmarshal(respBody, &jsonResp)
-			if err != nil {
-				return scores, err
-			}
-			scores = append(scores, float64(len(jsonResp.Matches)))
-		}
-		time.Sleep(1 * time.Minute)
-	}
-	return scores, nil
 }
 
 // BingClient defines a new Bing Spell Check client.
@@ -203,9 +108,6 @@ func (client *BingClient) Scores(issues ...jira.Issue) ([]float64, error) {
 					errCh <- err
 					return
 				}
-				fmt.Printf("flagged tokens len: %d\n", len(bingResponse.FlaggedTokens))
-				fmt.Printf("resp status: %s\n", resp.Status)
-				fmt.Printf("resp status code: %d\n", resp.StatusCode)
 				scores = append(scores, float64(len(bingResponse.FlaggedTokens)))
 				errCh <- nil
 			}(issue)
