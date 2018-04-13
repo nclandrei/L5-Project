@@ -94,7 +94,10 @@ func (client *LanguageToolClient) Scores(issues ...jira.Issue) ([]float64, error
 			if issue.GrammarErrCount != 0 {
 				continue
 			}
-			strToAnalyze := strings.Join([]string{issue.Fields.Summary, issue.Fields.Description}, "\n")
+			strToAnalyze, err := concatAndRemoveNewlines(issue.Fields.Summary, issue.Fields.Description)
+			if err != nil {
+				return scores, err
+			}
 			request, err := http.NewRequest("POST", client.path, newRequestBody(strToAnalyze))
 			if err != nil {
 				return scores, err
@@ -163,9 +166,13 @@ func (client *BingClient) Scores(issues ...jira.Issue) ([]float64, error) {
 		rateLimit = bingRateLimit
 	}
 	for i := 0; i < len(issues); i += rateLimit {
-		for i := range issues[i:(i + rateLimit)] {
-			go func(index int) {
-				strToAnalyze := strings.Join([]string{issues[index].Fields.Summary, issues[index].Fields.Description}, "\n")
+		for _, issue := range issues[i:(i + rateLimit)] {
+			go func(issue jira.Issue) {
+				strToAnalyze, err := concatAndRemoveNewlines(issue.Fields.Summary, issue.Fields.Description)
+				if err != nil {
+					errCh <- err
+					return
+				}
 				values := url.Values{}
 				values.Set("Text", strToAnalyze)
 				req, err := http.NewRequest(
@@ -196,10 +203,12 @@ func (client *BingClient) Scores(issues ...jira.Issue) ([]float64, error) {
 					errCh <- err
 					return
 				}
-				fmt.Printf("bing response: \n %v\n\n\n", bingResponse)
+				fmt.Printf("flagged tokens len: %d\n", len(bingResponse.FlaggedTokens))
+				fmt.Printf("resp status: %s\n", resp.Status)
+				fmt.Printf("resp status code: %d\n", resp.StatusCode)
 				scores = append(scores, float64(len(bingResponse.FlaggedTokens)))
 				errCh <- nil
-			}(i)
+			}(issue)
 		}
 		time.Sleep(1 * time.Second)
 	}
@@ -237,6 +246,7 @@ func (client SentimentClient) Name() string {
 // Scores calculates the sentiment score for an issue's comments after querying GCP.
 func (client *SentimentClient) Scores(issues ...jira.Issue) ([]float64, error) {
 	scores := make([]float64, len(issues))
+	errCh := make(chan error, len(issues))
 	var rateLimit int
 	if gcpRateLimit > len(issues) {
 		rateLimit = len(issues)
@@ -245,28 +255,38 @@ func (client *SentimentClient) Scores(issues ...jira.Issue) ([]float64, error) {
 	}
 	for i := 0; i < len(issues); i += rateLimit {
 		for _, issue := range issues[i:(i + rateLimit)] {
-			if issue.SentimentScore != 0 {
-				continue
-			}
-			concatComm, err := concatenateComments(issue)
-			if err != nil {
-				return scores, err
-			}
-			sentiment, err := client.AnalyzeSentiment(client.ctx, &languagepb.AnalyzeSentimentRequest{
-				Document: &languagepb.Document{
-					Source: &languagepb.Document_Content{
-						Content: concatComm,
+			go func(issue jira.Issue) {
+				if issue.SentimentScore != 0 {
+					return
+				}
+				concatComm, err := concatenateComments(issue)
+				if err != nil {
+					errCh <- err
+					return
+				}
+				sentiment, err := client.AnalyzeSentiment(client.ctx, &languagepb.AnalyzeSentimentRequest{
+					Document: &languagepb.Document{
+						Source: &languagepb.Document_Content{
+							Content: concatComm,
+						},
+						Type: languagepb.Document_PLAIN_TEXT,
 					},
-					Type: languagepb.Document_PLAIN_TEXT,
-				},
-				EncodingType: languagepb.EncodingType_UTF8,
-			})
-			if err != nil {
-				return scores, err
-			}
-			scores = append(scores, float64(sentiment.DocumentSentiment.Score))
+					EncodingType: languagepb.EncodingType_UTF8,
+				})
+				if err != nil {
+					errCh <- err
+					return
+				}
+				scores = append(scores, float64(sentiment.DocumentSentiment.Score))
+				errCh <- nil
+			}(issue)
 		}
 		time.Sleep(1 * time.Minute)
+	}
+	for i := 0; i < len(issues); i++ {
+		if err := <-errCh; err != nil {
+			return scores, err
+		}
 	}
 	return scores, nil
 }
@@ -282,6 +302,7 @@ func MultipleScores(issues []jira.Issue, scorers ...Scorer) (map[string][]float6
 				errCh <- err
 			} else {
 				scoreMap[scorers[index].Name()] = scores
+				errCh <- nil
 			}
 		}(i)
 	}
