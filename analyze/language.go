@@ -57,7 +57,7 @@ func NewBingClient(key string) *BingClient {
 
 // Name returns the name of the Bing client.
 func (client *BingClient) Name() string {
-	return "BING"
+	return "GRAMMAR"
 }
 
 // Scores returns the grammar correctness scores for all issues given as input parameters.
