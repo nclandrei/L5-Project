@@ -56,17 +56,29 @@ const (
 
 // Issue defines the Jira issue retrieved via the REST API
 type Issue struct {
-	Key              string    `json:"key" bson:"_id"`
-	Expand           string    `json:"_"`
-	ID               string    `json:"-"`
-	Self             string    `json:"-"`
-	Fields           Fields    `json:"fields"`
-	Changelog        Changelog `json:"changelog"`
-	TimeToClose      float64
-	SentimentScore   float64
-	GrammarErrCount  float64
-	StackTrace       bool
-	StepsToReproduce bool
+	Key                 string    `json:"key" bson:"_id"`
+	Expand              string    `json:"_"`
+	ID                  string    `json:"-"`
+	Self                string    `json:"-"`
+	Fields              Fields    `json:"fields"`
+	Changelog           Changelog `json:"changelog"`
+	TimeToClose         float64
+	Sentiment           Sentiment
+	GrammarCorrectness  GrammarCorrectness
+	HasStackTrace       bool
+	HasStepsToReproduce bool
+}
+
+// Sentiment holds information regarding the sentiment analysis score and if the analysis has been conducted.
+type Sentiment struct {
+	Score    float64
+	HasScore bool
+}
+
+// GrammarCorrectness holds information regarding the grammar correctness score and if the analysis has been conducted.
+type GrammarCorrectness struct {
+	Score    float64
+	HasScore bool
 }
 
 // Fields defines the fields retrieved via the REST API
