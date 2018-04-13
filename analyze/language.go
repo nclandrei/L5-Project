@@ -50,13 +50,13 @@ type BingFlaggedToken struct {
 func NewBingClient(key string) *BingClient {
 	transport := &http.Transport{
 		Dial: (&net.Dialer{
-			Timeout:   30 * time.Second,
-			KeepAlive: 30 * time.Second,
+			Timeout:   60 * time.Second,
+			KeepAlive: 60 * time.Second,
 		}).Dial,
 		TLSHandshakeTimeout: 60 * time.Second,
 	}
 	client := &http.Client{
-		Timeout:   45 * time.Second,
+		Timeout:   90 * time.Second,
 		Transport: transport,
 	}
 	return &BingClient{
