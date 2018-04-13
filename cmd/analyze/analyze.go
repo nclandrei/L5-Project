@@ -61,6 +61,19 @@ func main() {
 		log.Fatalf("could not retrieve issues from database: %v\n", err)
 	}
 
+	for i := range issues {
+		hasStepsToReproduce, err := analyze.HasStepsToReproduce(issues[i])
+		if err != nil {
+			log.Fatalf("could not determine whether issue has steps to reproduce: %v\n", err)
+		}
+		issues[i].HasStepsToReproduce = hasStepsToReproduce
+		hasStackTrace, err := analyze.HasStackTrace(issues[i])
+		if err != nil {
+			log.Fatalf("could not determine whether issue has stacktrace: %v\n", err)
+		}
+		issues[i].HasStackTrace = hasStackTrace
+	}
+
 	err = analyze.MultipleScores(issues, clients...)
 	if err != nil {
 		log.Printf("could not calculate scores: %v\n", err)
