@@ -77,7 +77,7 @@ type Sentiment struct {
 
 // GrammarCorrectness holds information regarding the grammar correctness score and if the analysis has been conducted.
 type GrammarCorrectness struct {
-	Score    float64
+	Score    int
 	HasScore bool
 }
 
