@@ -59,8 +59,8 @@ func SentimentScoreAnalysis(issues []jira.Issue) ([]float64, []float64) {
 	var timeDiffs []float64
 	for _, issue := range issues {
 		timeDiff := timeToResolve(issue)
-		if timeDiff > -1 && isIssueHighPriority(issue) {
-			scores = append(scores, float64(issue.SentimentScore))
+		if timeDiff > -1 && isIssueHighPriority(issue) && issue.Sentiment.HasScore {
+			scores = append(scores, float64(issue.Sentiment.Score))
 			timeDiffs = append(timeDiffs, timeDiff)
 		}
 	}
@@ -192,8 +192,8 @@ func concatenateComments(issue jira.Issue) (string, error) {
 	return builder.String(), nil
 }
 
-// calculateJTimeDifference calculates the duration in hours between 2 different timestamps.
-func calculateJTimeDifference(t1, t2 jira.JTime) float64 {
+// calculateTimeDifference calculates the duration in hours between 2 different timestamps.
+func calculateTimeDifference(t1, t2 jira.JTime) float64 {
 	return time.Time(t1).Sub(time.Time(t2)).Hours()
 }
 
@@ -207,7 +207,7 @@ func timeToResolve(issue jira.Issue) float64 {
 	for _, history := range issue.Changelog.Histories {
 		for _, item := range history.Items {
 			if item.Field == "status" && item.FromString == "Open" && item.ToString == "Closed" {
-				return calculateJTimeDifference(history.Created, issue.Fields.Created)
+				return calculateTimeDifference(history.Created, issue.Fields.Created)
 			}
 		}
 	}
