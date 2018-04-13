@@ -3,13 +3,13 @@ package analyze
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/nclandrei/L5-Project/jira"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
-	"sync"
 	"time"
 
 	language "cloud.google.com/go/language/apiv1"
@@ -154,7 +154,9 @@ func (client *BingClient) Name() string {
 
 // Scores returns the grammar correctness scores for all issues given as input parameters.
 func (client *BingClient) Scores(issues ...jira.Issue) ([]float64, error) {
+	defer fmt.Println("FINISHED")
 	var scores []float64
+	errCh := make(chan error, len(issues))
 	var rateLimit int
 	if bingRateLimit > len(issues) {
 		rateLimit = len(issues)
@@ -162,37 +164,46 @@ func (client *BingClient) Scores(issues ...jira.Issue) ([]float64, error) {
 		rateLimit = bingRateLimit
 	}
 	for i := 0; i < len(issues); i += rateLimit {
-		for _, issue := range issues[i:(i + rateLimit)] {
-			strToAnalyze := strings.Join([]string{issue.Fields.Summary, issue.Fields.Description}, "\n")
-			values := url.Values{}
-			values.Set("Text", strToAnalyze)
-			req, err := http.NewRequest(
-				"POST",
-				bingAPIPath,
-				strings.NewReader(values.Encode()),
-			)
-			if err != nil {
-				return scores, err
-			}
-			req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-			req.Header.Add("Ocp-Apim-Subscription-Key", client.key)
-			resp, err := http.DefaultClient.Do(req)
-			if err != nil {
-				return scores, err
-			}
-			defer resp.Body.Close()
-			body, err := ioutil.ReadAll(resp.Body)
-			if err != nil {
-				return scores, err
-			}
-			bingResponse := &BingResponse{}
-			err = json.Unmarshal(body, bingResponse)
-			if err != nil {
-				return scores, err
-			}
-			scores = append(scores, float64(len(bingResponse.FlaggedTokens)))
+		for i := range issues[i:(i + rateLimit)] {
+			go func(i int) {
+				strToAnalyze := strings.Join([]string{issues[i].Fields.Summary, issues[i].Fields.Description}, "\n")
+				fmt.Printf("string to analyze for issue {%s}: %s\n", issues[i].Key, strToAnalyze)
+				values := url.Values{}
+				values.Set("Text", strToAnalyze)
+				req, err := http.NewRequest(
+					"POST",
+					bingAPIPath,
+					strings.NewReader(values.Encode()),
+				)
+				if err != nil {
+					errCh <- err
+				}
+				req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+				req.Header.Add("Ocp-Apim-Subscription-Key", client.key)
+				resp, err := http.DefaultClient.Do(req)
+				if err != nil {
+					errCh <- err
+				}
+				defer resp.Body.Close()
+				body, err := ioutil.ReadAll(resp.Body)
+				if err != nil {
+					errCh <- err
+				}
+				bingResponse := &BingResponse{}
+				err = json.Unmarshal(body, bingResponse)
+				if err != nil {
+					errCh <- err
+				}
+				scores = append(scores, float64(len(bingResponse.FlaggedTokens)))
+				errCh <- nil
+			}(i)
 		}
 		time.Sleep(1 * time.Minute)
+	}
+	for i := 0; i < len(issues); i++ {
+		if err := <-errCh; err != nil {
+			return scores, err
+		}
 	}
 	return scores, nil
 }
@@ -259,23 +270,23 @@ func (client *SentimentClient) Scores(issues ...jira.Issue) ([]float64, error) {
 
 // MultipleScores takes multiple issues and scorers and returns a map for each scorer to its corresponding scores.
 func MultipleScores(issues []jira.Issue, scorers ...Scorer) (map[string][]float64, error) {
+	defer fmt.Println("finished getting all scores")
 	scoreMap := make(map[string][]float64)
-	var wg sync.WaitGroup
-	var err error
+	errCh := make(chan error, len(scorers))
 	for _, scorer := range scorers {
-		wg.Add(1)
 		go func(scorer Scorer) {
-			defer wg.Done()
-			scores, e := scorer.Scores(issues...)
-			if e != nil {
-				err = e
+			scores, err := scorer.Scores(issues...)
+			if err != nil {
+				errCh <- err
+			} else {
+				scoreMap[scorer.Name()] = scores
 			}
-			scoreMap[scorer.Name()] = scores
 		}(scorer)
-		if err != nil {
-			break
+	}
+	for i := 0; i < len(scorers); i++ {
+		if err := <-errCh; err != nil {
+			return scoreMap, err
 		}
 	}
-	wg.Wait()
-	return scoreMap, err
+	return scoreMap, nil
 }
