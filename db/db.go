@@ -116,6 +116,46 @@ func (db *BoltDB) Issues() ([]jira.Issue, error) {
 	return issues, err
 }
 
+// IssueSlice returns a issue slice given a low and high bound.
+func (db *BoltDB) IssueSlice(l, h int) ([]jira.Issue, error) {
+	if l >= h {
+		return nil, fmt.Errorf("low bound is greater than high bound")
+	}
+	if l < 0 || h < 0 {
+		return nil, fmt.Errorf("bounds are negative")
+	}
+	size, err := db.IssueBucketSize()
+	if err != nil {
+		return nil, err
+	}
+	if l > size || h > size {
+		return nil, fmt.Errorf("bounds greater than bucket size")
+	}
+	issues := make([]jira.Issue, h-l)
+	err = db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(bucketName))
+		cursor := b.Cursor()
+		_, v := cursor.First()
+		var i int
+		for i < l {
+			_, v = cursor.Next()
+			i++
+		}
+		for i < h {
+			var issue jira.Issue
+			err := json.Unmarshal(v, &issue)
+			if err != nil {
+				return err
+			}
+			issues[i-l] = issue
+			_, v = cursor.Next()
+			i++
+		}
+		return nil
+	})
+	return issues, err
+}
+
 // Cursor returns a cursor to the users inside the bucket as well as a function to close the open tx.
 func (db *BoltDB) Cursor() (*bolt.Cursor, func() error, error) {
 	tx, err := db.Begin(false)
