@@ -2,11 +2,13 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"github.com/joho/godotenv"
 	"github.com/nclandrei/L5-Project/analyze"
 	"github.com/nclandrei/L5-Project/db"
+	"github.com/nclandrei/L5-Project/jira"
 	"log"
 	"os"
 )
@@ -56,31 +58,45 @@ func main() {
 		os.Exit(1)
 	}
 
-	issues, err := boltDB.Issues()
+	totalIssueLen, err := boltDB.IssueBucketSize()
 	if err != nil {
-		log.Fatalf("could not retrieve issues from database: %v\n", err)
+		log.Fatalf("could not retrieve issues bucket size: %v\n", err)
 	}
 
-	for i := range issues {
-		hasStepsToReproduce, err := analyze.HasStepsToReproduce(issues[i])
-		if err != nil {
-			log.Fatalf("could not determine whether issue has steps to reproduce: %v\n", err)
+	cursor, teardown, err := boltDB.Cursor()
+	if err != nil {
+		log.Fatalf("could not retrieve bolt cursor: %v\n", err)
+	}
+
+	fmt.Println(totalIssueLen)
+	os.Exit(1)
+	sliceSize := 10000
+	issues := make([]jira.Issue, sliceSize)
+
+	_, v := cursor.First()
+	for i := 0; i < totalIssueLen; i += totalIssueLen {
+		for j := 0; j < sliceSize; j++ {
+			var issue jira.Issue
+			err := json.Unmarshal(v, &issue)
+			if err != nil {
+				log.Fatalf("could not json unmarshal issue: %v\n", err)
+			}
+			issues[j] = issue
+			_, v = cursor.Next()
 		}
-		issues[i].HasStepsToReproduce = hasStepsToReproduce
-		hasStackTrace, err := analyze.HasStackTrace(issues[i])
+		err = analyze.MultipleScores(issues, clients...)
 		if err != nil {
-			log.Fatalf("could not determine whether issue has stacktrace: %v\n", err)
+			log.Printf("could not calculate scores: %v\n", err)
 		}
-		issues[i].HasStackTrace = hasStackTrace
+
+		err = boltDB.InsertIssues(issues...)
+		if err != nil {
+			log.Fatalf("could not insert issues in db: %v\n", err)
+		}
 	}
 
-	err = analyze.MultipleScores(issues, clients...)
+	err = teardown()
 	if err != nil {
-		log.Printf("could not calculate scores: %v\n", err)
-	}
-
-	err = boltDB.InsertIssues(issues...)
-	if err != nil {
-		log.Fatalf("could not insert issues in db: %v\n", err)
+		log.Fatalf("could not close bolt transaction: %v\n", err)
 	}
 }
