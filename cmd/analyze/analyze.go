@@ -78,7 +78,6 @@ func main() {
 		if err != nil {
 			log.Printf("could not calculate scores: \n%v\n", err)
 		}
-		fmt.Println("finished getting scores")
 		err = boltDB.InsertIssues(issues...)
 		if err != nil {
 			log.Fatalf("could not insert issues in db: %v\n", err)
