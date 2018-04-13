@@ -129,3 +129,13 @@ func (db *BoltDB) Cursor() (*bolt.Cursor, func() error, error) {
 	}
 	return b.Cursor(), teardown, nil
 }
+
+// IssueBucketSize returns the total number of key/value pairs inside the issues bucket.
+func (db *BoltDB) IssueBucketSize() (int, error) {
+	tx, err := db.Begin(true)
+	if err != nil {
+		return -1, err
+	}
+	defer tx.Rollback()
+	return tx.Bucket([]byte(bucketName)).Stats().KeyN, nil
+}
