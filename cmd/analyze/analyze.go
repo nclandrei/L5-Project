@@ -2,11 +2,13 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"github.com/joho/godotenv"
 	"github.com/nclandrei/L5-Project/analyze"
 	"github.com/nclandrei/L5-Project/db"
+	"github.com/nclandrei/L5-Project/jira"
 	"log"
 	"os"
 )
@@ -61,12 +63,32 @@ func main() {
 		os.Exit(1)
 	}
 
-	issues, err := boltDB.Issues()
+	cursor, teardown, err := boltDB.Cursor()
 	if err != nil {
 		log.Fatalf("could not retrieve issues from Bolt DB: %v\n", err)
 	}
 
-	scoreMap, err := analyze.MultipleScores(issues[:10], clients...)
+	var issues []jira.Issue
+
+	_, v := cursor.First()
+
+	for i := 0; i < 10; i++ {
+		var issue jira.Issue
+		err := json.Unmarshal(v, &issue)
+		if err != nil {
+			log.Fatalf("could not unmarshal issue from bolt db: %v\n", err)
+		}
+		issues = append(issues, issue)
+		fmt.Println(issue.Key)
+		_, v = cursor.Next()
+	}
+
+	err = teardown()
+	if err != nil {
+		log.Fatalf("could not close bolt DB tx: %v\n", err)
+	}
+
+	scoreMap, err := analyze.MultipleScores(issues, clients...)
 	if err != nil {
 		log.Fatalf("could not calculate scores: %v\n", err)
 	}
@@ -84,6 +106,7 @@ func main() {
 			}
 			break
 		case "BING":
+			fmt.Printf("bing scores are:\n %v\n", v)
 			for i := range v {
 				issues[i].GrammarErrCount = v[i]
 			}
