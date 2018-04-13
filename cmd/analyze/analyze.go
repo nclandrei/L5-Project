@@ -20,8 +20,7 @@ func main() {
 	}
 
 	var analysisType string
-	flag.StringVar(&analysisType, "type", "all", "type of analysis to run; available types: langTool,"+
-		" sentiment, bing, all (sentiment, langTool, bing spell check)")
+	flag.StringVar(&analysisType, "type", "all", "type of analysis to run; available types: grammar, sentiment, all")
 
 	flag.Parse()
 
@@ -33,10 +32,7 @@ func main() {
 	var clients []analyze.Scorer
 
 	switch analysisType {
-	case "langTool":
-		clients = append(clients, analyze.NewLanguageToolClient())
-		break
-	case "bing":
+	case "grammar":
 		clients = append(clients, analyze.NewBingClient(os.Getenv("BING_KEY_1")))
 		break
 	case "sentiment":
@@ -54,7 +50,6 @@ func main() {
 		clients = append(
 			clients,
 			sentimentClient,
-			analyze.NewLanguageToolClient(),
 			analyze.NewBingClient(os.Getenv("BING_KEY_1")),
 		)
 		break
@@ -95,18 +90,12 @@ func main() {
 
 	for k, v := range scoreMap {
 		switch k {
-		case "LANG_TOOL":
-			for i := range v {
-				issues[i].GrammarErrCount = v[i]
-			}
-			break
 		case "SENTIMENT":
 			for i := range v {
 				issues[i].SentimentScore = v[i]
 			}
 			break
-		case "BING":
-			fmt.Printf("bing scores are:\n %v\n", v)
+		case "GRAMMAR":
 			for i := range v {
 				issues[i].GrammarErrCount = v[i]
 			}
