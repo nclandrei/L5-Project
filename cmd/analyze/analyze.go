@@ -88,7 +88,6 @@ func main() {
 				issues[i].GrammarErrCount = v[i]
 			}
 		}
-
 		err = boltDB.InsertIssues(issues...)
 		if err != nil {
 			log.Fatalf("could not insert issues back into db: %v\n", err)
