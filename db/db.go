@@ -37,8 +37,7 @@ func NewBoltDB(path string) (*BoltDB, error) {
 	}
 	err = db.Update(func(tx *bolt.Tx) error {
 		_, txErr := tx.CreateBucketIfNotExists([]byte(bucketName))
-		err = txErr
-		return nil
+		return txErr
 	})
 	if err != nil {
 		return nil, err
@@ -73,7 +72,7 @@ func (db *BoltDB) InsertIssues(issues ...jira.Issue) error {
 
 // IssueByKey returns a single issue searched for by key.
 func (db *BoltDB) IssueByKey(key string) (*jira.Issue, error) {
-	tx, err := db.Begin(true)
+	tx, err := db.Begin(false)
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +96,7 @@ func (db *BoltDB) IssueByKey(key string) (*jira.Issue, error) {
 // Issues retrieves all the issues from inside the database.
 func (db *BoltDB) Issues() ([]jira.Issue, error) {
 	var issues []jira.Issue
-	tx, err := db.Begin(true)
+	tx, err := db.Begin(false)
 	if err != nil {
 		return nil, err
 	}
@@ -119,7 +118,7 @@ func (db *BoltDB) Issues() ([]jira.Issue, error) {
 
 // Cursor returns a cursor to the users inside the bucket as well as a function to close the open tx.
 func (db *BoltDB) Cursor() (*bolt.Cursor, func() error, error) {
-	tx, err := db.Begin(true)
+	tx, err := db.Begin(false)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -132,7 +131,7 @@ func (db *BoltDB) Cursor() (*bolt.Cursor, func() error, error) {
 
 // IssueBucketSize returns the total number of key/value pairs inside the issues bucket.
 func (db *BoltDB) IssueBucketSize() (int, error) {
-	tx, err := db.Begin(true)
+	tx, err := db.Begin(false)
 	if err != nil {
 		return -1, err
 	}
