@@ -87,6 +87,7 @@ func main() {
 			for i := range v {
 				issues[i].GrammarErrCount = v[i]
 			}
+			break
 		}
 		err = boltDB.InsertIssues(issues...)
 		if err != nil {
