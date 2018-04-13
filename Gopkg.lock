@@ -59,6 +59,12 @@
   version = "v2.0.0"
 
 [[projects]]
+  name = "github.com/joho/godotenv"
+  packages = ["."]
+  revision = "a79fa1e548e2c689c241d10173efd51e5d689d5b"
+  version = "v1.2.0"
+
+[[projects]]
   branch = "master"
   name = "github.com/llgcode/draw2d"
   packages = [
@@ -268,6 +274,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "afdf91f130f4bc8c3639fb2cd1119e3005e71b1b96c8fd181643967db6523e42"
+  inputs-digest = "ba6b94fa5110d360994442e5aa92d8eb8ceb6819367c65b61cdd22aad26a3322"
   solver-name = "gps-cdcl"
   solver-version = 1
