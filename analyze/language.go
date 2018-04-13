@@ -156,6 +156,7 @@ func (client *SentimentClient) Scores(issues ...jira.Issue) error {
 		for j := range issues[i:(i + rateLimit)] {
 			go func(i, j int) {
 				if issues[i+j].Sentiment.HasScore {
+					errCh <- nil
 					return
 				}
 				concatComm, err := concatenateComments(issues[i+j])
