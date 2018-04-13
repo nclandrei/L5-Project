@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/nclandrei/L5-Project/jira"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
@@ -47,8 +48,19 @@ type BingFlaggedToken struct {
 
 // NewBingClient returns a new Bing Spell Check API client.
 func NewBingClient(key string) *BingClient {
+	transport := &http.Transport{
+		Dial: (&net.Dialer{
+			Timeout:   30 * time.Second,
+			KeepAlive: 30 * time.Second,
+		}).Dial,
+		TLSHandshakeTimeout: 60 * time.Second,
+	}
+	client := &http.Client{
+		Timeout:   45 * time.Second,
+		Transport: transport,
+	}
 	return &BingClient{
-		Client: &http.Client{},
+		Client: client,
 		key:    key,
 	}
 }
