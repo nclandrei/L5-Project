@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"github.com/joho/godotenv"
@@ -63,40 +62,26 @@ func main() {
 		log.Fatalf("could not retrieve issues bucket size: %v\n", err)
 	}
 
-	cursor, teardown, err := boltDB.Cursor()
-	if err != nil {
-		log.Fatalf("could not retrieve bolt cursor: %v\n", err)
-	}
-
-	fmt.Println(totalIssueLen)
-	os.Exit(1)
 	sliceSize := 10000
+	highBound := sliceSize
 	issues := make([]jira.Issue, sliceSize)
 
-	_, v := cursor.First()
-	for i := 0; i < totalIssueLen; i += totalIssueLen {
-		for j := 0; j < sliceSize; j++ {
-			var issue jira.Issue
-			err := json.Unmarshal(v, &issue)
-			if err != nil {
-				log.Fatalf("could not json unmarshal issue: %v\n", err)
-			}
-			issues[j] = issue
-			_, v = cursor.Next()
+	for i := 0; i < totalIssueLen; i += sliceSize {
+		if i+highBound > totalIssueLen {
+			highBound = totalIssueLen % sliceSize
+		}
+		issues, err = boltDB.IssueSlice(i, i+highBound)
+		if err != nil {
+			log.Fatalf("could not get issue slice: %v\n", err)
 		}
 		err = analyze.MultipleScores(issues, clients...)
 		if err != nil {
-			log.Printf("could not calculate scores: %v\n", err)
+			log.Printf("could not calculate scores: \n%v\n", err)
 		}
-
+		fmt.Println("finished getting scores")
 		err = boltDB.InsertIssues(issues...)
 		if err != nil {
 			log.Fatalf("could not insert issues in db: %v\n", err)
 		}
-	}
-
-	err = teardown()
-	if err != nil {
-		log.Fatalf("could not close bolt transaction: %v\n", err)
 	}
 }
