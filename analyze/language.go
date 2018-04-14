@@ -164,8 +164,12 @@ func (client *SentimentClient) Scores(issues ...jira.Issue) error {
 	} else {
 		rateLimit = gcpRateLimit
 	}
+	highBound := rateLimit
 	for i := 0; i < len(issues); i += rateLimit {
-		for j := range issues[i:(i + rateLimit)] {
+		if i+highBound > len(issues) {
+			highBound = len(issues) % rateLimit
+		}
+		for j := range issues[i:(i + highBound)] {
 			go func(i, j int) {
 				if issues[i+j].Sentiment.HasScore {
 					errCh <- nil
