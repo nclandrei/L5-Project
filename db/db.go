@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/nclandrei/L5-Project/jira"
+	"github.com/nclandrei/L5-Project"
 
 	"github.com/boltdb/bolt"
 )
@@ -15,10 +15,12 @@ const (
 	bucketName = "users"
 )
 
-// Database defines a generic interface for different DBs to implement.
-type Database interface {
+// IssueStorage defines a generic interface for different DBs to implement.
+type IssueStorage interface {
 	Issues() ([]jira.Issue, error)
-	InsertIssues([]jira.Issue) error
+	Insert(...jira.Issue) error
+	Slice(int, int) ([]jira.Issue, error)
+	Size() (int, error)
 }
 
 // BoltDB holds the information related to an instance of Bolt Database.
@@ -47,8 +49,8 @@ func NewBoltDB(path string) (*BoltDB, error) {
 	}, err
 }
 
-// InsertIssues takes a slice of issues and inserts them into Bolt.
-func (db *BoltDB) InsertIssues(issues ...jira.Issue) error {
+// Insert takes a slice of issues and inserts them into Bolt.
+func (db *BoltDB) Insert(issues ...jira.Issue) error {
 	for _, issue := range issues {
 		tx, err := db.Begin(true)
 		if err != nil {
@@ -116,15 +118,15 @@ func (db *BoltDB) Issues() ([]jira.Issue, error) {
 	return issues, err
 }
 
-// IssueSlice returns a issue slice given a low and high bound.
-func (db *BoltDB) IssueSlice(l, h int) ([]jira.Issue, error) {
+// Slice returns a issue slice given a low and high bound.
+func (db *BoltDB) Slice(l, h int) ([]jira.Issue, error) {
 	if l >= h {
 		return nil, fmt.Errorf("low bound is greater than high bound")
 	}
 	if l < 0 || h < 0 {
 		return nil, fmt.Errorf("bounds are negative")
 	}
-	size, err := db.IssueBucketSize()
+	size, err := db.Size()
 	if err != nil {
 		return nil, err
 	}
@@ -169,8 +171,8 @@ func (db *BoltDB) Cursor() (*bolt.Cursor, func() error, error) {
 	return b.Cursor(), teardown, nil
 }
 
-// IssueBucketSize returns the total number of key/value pairs inside the issues bucket.
-func (db *BoltDB) IssueBucketSize() (int, error) {
+// Size returns the total number of key/value pairs inside the issues bucket.
+func (db *BoltDB) Size() (int, error) {
 	tx, err := db.Begin(false)
 	if err != nil {
 		return -1, err
