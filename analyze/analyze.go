@@ -8,6 +8,10 @@ import (
 	"github.com/nclandrei/ticketguru/jira"
 )
 
+// TicketAnalysis defines a function that analyzes a variadic number of tickets and updates
+// their metrics fields accordingly.
+type TicketAnalysis func(...jira.Ticket)
+
 // TimesToClose returns how much time it took to close a variadic number of tickets.
 func TimesToClose(tickets ...jira.Ticket) {
 	for i := range tickets {
@@ -39,23 +43,33 @@ func CountWordsSummaryDesc(tickets ...jira.Ticket) {
 	}
 }
 
-// CountWordsComments counts the number of words in all comments for a variadic number of tickets.
-func CountWordsComments(tickets ...jira.Ticket) error {
+// CommentsComplexity counts the number of words in all comments for a variadic number of tickets.
+func CommentsComplexity(tickets ...jira.Ticket) {
 	for i := range tickets {
 		if isTicketHighPriority(tickets[i]) {
-			commConcat, err := concatenateComments(tickets[i])
-			if err != nil {
-				return err
-			}
-			tickets[i].CommentWordsCount = calculateNumberOfWords(commConcat)
+			tickets[i].CommentWordsCount = calculateNumberOfWords(concatComments(tickets[i]))
 		}
 	}
-	return nil
 }
 
-// HaveStepsToReproduce returns whether a variadic number of tickets have steps to reproduce or not inside
+// Attachments takes a variadic number of tickets and checks if they have attachments and what type they are.
+func Attachments(tickets ...jira.Ticket) {
+	for i := range tickets {
+		if isTicketHighPriority(tickets[i]) {
+			for _, attachment := range tickets[i].Fields.Attachments {
+
+			}
+		}
+	}
+}
+
+func attachmentType(a jira.Attachment) jira.AttachmentType {
+
+}
+
+// StepsToReproduce returns whether a variadic number of tickets have steps to reproduce or not inside
 // summary, description or any of the comments.
-func HaveStepsToReproduce(tickets ...jira.Ticket) {
+func StepsToReproduce(tickets ...jira.Ticket) {
 	expr := `(\n(\s*)\*(.*)){2,}`
 	for i := range tickets {
 		if !isTicketHighPriority(tickets[i]) {
@@ -79,9 +93,9 @@ func HaveStepsToReproduce(tickets ...jira.Ticket) {
 	}
 }
 
-// HaveStackTrace checks whether a variadic number of tickets have stack traces attached either
+// StackTraces checks whether a variadic number of tickets have stack traces attached either
 // inside the description or any of the comments.
-func HaveStackTrace(tickets ...jira.Ticket) {
+func StackTraces(tickets ...jira.Ticket) {
 	expr := `^.+Exception[^\n]+\n(\s*at.+\s*\n)+`
 	for i := range tickets {
 		if !isTicketHighPriority(tickets[i]) {
@@ -138,15 +152,13 @@ func concatAndRemoveNewlines(strs ...string) (string, error) {
 	return strBuilder.String(), nil
 }
 
-// ConcatenateComments returns a string containing all the comment bodies concatenated.
-func concatenateComments(ticket jira.Ticket) (string, error) {
+// concatComments returns a string containing all the comment bodies concatenated.
+func concatComments(ticket jira.Ticket) string {
 	var builder strings.Builder
 	for _, comment := range ticket.Fields.Comments.Comments {
-		if _, err := builder.WriteString(comment.Body); err != nil {
-			return "", err
-		}
+		builder.WriteString(comment.Body)
 	}
-	return builder.String(), nil
+	return builder.String()
 }
 
 // calculateTimeDifference calculates the duration in hours between 2 different timestamps.
