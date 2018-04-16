@@ -57,7 +57,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	totalIssueLen, err := boltDB.IssueBucketSize()
+	totalIssueLen, err := boltDB.Size()
 	if err != nil {
 		log.Fatalf("could not retrieve issues bucket size: %v\n", err)
 	}
@@ -70,7 +70,7 @@ func main() {
 		if i+highBound > totalIssueLen {
 			highBound = totalIssueLen % sliceSize
 		}
-		issues, err = boltDB.IssueSlice(i, i+highBound)
+		issues, err = boltDB.Slice(i, i+highBound)
 		if err != nil {
 			log.Fatalf("could not get issue slice: %v\n", err)
 		}
@@ -78,7 +78,7 @@ func main() {
 		if err != nil {
 			log.Printf("could not calculate scores: \n%v\n", err)
 		}
-		err = boltDB.InsertIssues(issues...)
+		err = boltDB.Insert(issues...)
 		if err != nil {
 			log.Fatalf("could not insert issues in db: %v\n", err)
 		}
