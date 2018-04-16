@@ -93,7 +93,7 @@ type Fields struct {
 	DueDate      Time         `json:"duedate,omitempty"`
 	Comments     Comments     `json:"comment,omitempty"`
 	Priority     Priority     `json:"priority,omitempty"`
-	IssueType    IssueType    `json:"issuetype,omitempty"`
+	IssueType    Type         `json:"issuetype,omitempty"`
 }
 
 // Changelog defines the entire changelog of a Jira issue
@@ -142,8 +142,8 @@ type Attachment struct {
 	Content  string `json:"content,omitempty"`
 }
 
-// IssueType defines the issue type in Jira
-type IssueType struct {
+// Type defines the issue type in Jira
+type Type struct {
 	ID          string `json:"id,omitempty"`
 	Name        string `json:"name,omitempty"`
 	Description string `json:"description,omitempty"`
