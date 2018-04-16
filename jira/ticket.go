@@ -135,18 +135,22 @@ type Attachment struct {
 type AttachmentType int
 
 const (
-	// Image represents the image type of an attachment (e.g. png, jpg).
-	Image AttachmentType = iota + 1
-	// Video represents the video type of an attachmnet (e.g. mkv, mp4, avi).
-	Video
-	// Code represents the code snippet type of an attachmnet (e.g. go, java, groovy).
-	Code
-	// Spreadsheet represents the spreadsheet type of an attachmnet (e.g. numbers, csv, xlsx).
-	Spreadsheet
-	// Text represents the text type of an attachment (e.g. md, txt, org).
-	Text
-	// Other represents any other extension of the attachment that is not relevant to the analysis.
-	Other
+	// ImageAttachment represents the image type of an attachment (e.g. png, jpg).
+	ImageAttachment AttachmentType = iota + 1
+	// VideoAttachment represents the video type of an attachmnet (e.g. mkv, mp4, avi).
+	VideoAttachment
+	// CodeAttachment represents the code snippet type of an attachmnet (e.g. go, java, groovy).
+	CodeAttachment
+	// SpreadsheetAttachment represents the spreadsheet type of an attachmnet (e.g. numbers, csv, xlsx).
+	SpreadsheetAttachment
+	// TextAttachment represents the text type of an attachment (e.g. md, txt, org).
+	TextAttachment
+	// ConfigAttachment represents the configuration type of an attachment (e.g. json, xml, yaml).
+	ConfigAttachment
+	// ArchiveAttachment represents the archive type of an attachment (e.g. zip, tar, rar).
+	ArchiveAttachment
+	// OtherAttachment represents any other extension of the attachment that is not relevant to the analysis.
+	OtherAttachment
 )
 
 // Type defines the type of a ticket in Jira.
