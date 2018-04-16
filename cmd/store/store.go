@@ -4,7 +4,9 @@ import (
 	"flag"
 	"github.com/joho/godotenv"
 	"os"
+	"os/signal"
 	"sync"
+	"syscall"
 
 	"github.com/nclandrei/ticketguru/db"
 
@@ -19,7 +21,6 @@ import (
 // as, otherwise, it would start dropping the connections
 const maxNoGoroutines = 100
 
-// store all the flags
 var (
 	jiraURL     = flag.String("jiraURL", "http://issues.apache.org", "URL for Jira instance")
 	project     = flag.String("project", "Kafka", "name of the project to be queried upon")
@@ -46,6 +47,15 @@ func main() {
 			logger = log.New(file, "jira-store: ", log.Lshortfile)
 		}
 	}
+
+	interruptCh := make(chan os.Signal, 1)
+	signal.Notify(interruptCh, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-interruptCh
+		log.SetOutput(os.Stderr)
+		log.Printf("interrupt issued... exitting now...")
+		os.Exit(1)
+	}()
 
 	err := godotenv.Load()
 	if err != nil {
@@ -76,9 +86,9 @@ func main() {
 		logger.Fatalf("could not authenticate Jira client: %v\n", err)
 	}
 
-	numberOfIssues, err := jiraClient.GetNumberOfIssues(*project)
+	numberOfIssues, err := jiraClient.TicketsCount(*project)
 	if err != nil {
-		logger.Fatalf("could not get total number of issues: %v\n", err)
+		logger.Fatalf("could not get total number of tickets: %v\n", err)
 	}
 
 	issueSliceSize := math.Ceil(float64(numberOfIssues) / float64(*gortnCnt))
