@@ -63,8 +63,33 @@ func Attachments(tickets ...jira.Ticket) {
 	}
 }
 
+// attachmentType returns the type of attachment.
 func attachmentType(a jira.Attachment) jira.AttachmentType {
+	extension := fileExtension(a.Filename)
+	switch extension {
+	case "png", "jpg", "jpeg", "gif", "bmp", "tiff", "webp":
+		return jira.ImageAttachment
+	case "md", "txt", "pdf", "doc", "docx", "pages":
+		return jira.TextAttachment
+	case "go", "java", "groovy", "rs", "clj", "py", "rb", "jar", "php", "js", "c", "cpp",
+		"h", "sh", "bat", "bin", "apk", "pl", "ex", "exs":
+		return jira.CodeAttachment
+	case "avi", "mkv", "mp4", "flv", "wmv", "mov":
+		return jira.VideoAttachment
+	case "xml", "json", "yml", "toml", "bson", "env":
+		return jira.ConfigAttachment
+	case "tar", "zip", "rar", "tgz", "7z", "z":
+		return jira.ArchiveAttachment
+	case "csv", "xls", "xslx", "numbers":
+		return jira.SpreadsheetAttachment
+	default:
+		return jira.OtherAttachment
+	}
+}
 
+// fileExtension returns the lowercased extension of a file given that file's name.
+func fileExtension(f string) string {
+	return strings.ToLower(f[(strings.LastIndex(f, ".") + 1):])
 }
 
 // StepsToReproduce returns whether a variadic number of tickets have steps to reproduce or not inside
