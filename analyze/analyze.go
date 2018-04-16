@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/nclandrei/L5-Project/jira"
+	"github.com/nclandrei/ticketguru/jira"
 )
 
 // WordinessAnalysis returns wordiness of a field (summary/comment/description) and time-to-complete (in hours).

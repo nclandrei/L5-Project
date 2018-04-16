@@ -4,17 +4,17 @@ import (
 	"flag"
 	"log"
 
-	"github.com/nclandrei/L5-Project/plot"
+	"github.com/nclandrei/ticketguru/plot"
 
-	"github.com/nclandrei/L5-Project/analyze"
+	"github.com/nclandrei/ticketguru/analyze"
 
-	"github.com/nclandrei/L5-Project/db"
+	"github.com/nclandrei/ticketguru/db"
 )
 
 var (
 	dbPath = flag.String(
 		"dbPath",
-		"/Users/nclandrei/Code/go/src/github.com/nclandrei/L5-Project/users.db",
+		"/Users/nclandrei/Code/go/src/github.com/nclandrei/ticketguru/users.db",
 		"path to Bolt database file",
 	)
 	plotType = flag.String("type", "all", "plot to draw")

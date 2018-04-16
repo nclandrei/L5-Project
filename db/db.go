@@ -3,9 +3,8 @@ package db
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/nclandrei/ticketguru/jira"
 	"time"
-
-	"github.com/nclandrei/L5-Project"
 
 	"github.com/boltdb/bolt"
 )

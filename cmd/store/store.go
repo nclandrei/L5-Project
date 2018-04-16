@@ -6,13 +6,13 @@ import (
 	"os"
 	"sync"
 
-	"github.com/nclandrei/L5-Project/db"
+	"github.com/nclandrei/ticketguru/db"
 
 	"log"
 	"math"
 	"net/url"
 
-	"github.com/nclandrei/L5-Project/jira"
+	"github.com/nclandrei/ticketguru/jira"
 )
 
 // This defines the maximum number of concurrent client calls to Jira REST API
@@ -26,7 +26,7 @@ var (
 	gortnCnt    = flag.Int("goroutinesCount", maxNoGoroutines, "number of goroutines to be used")
 	dbPath      = flag.String("dbPath", "users.db", "absolute path to the Bolt database")
 	logToFile   = flag.Bool("file_log", false, "specifies whether application should log to file or not")
-	logFilePath = flag.String("log_path", "~/Code/go/src/github.com/nclandrei/L5-Project/log.txt", "path to logging file")
+	logFilePath = flag.String("log_path", "~/Code/go/src/github.com/nclandrei/ticketguru/log.txt", "path to logging file")
 )
 
 func main() {

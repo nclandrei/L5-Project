@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/nclandrei/L5-Project/jira"
+	"github.com/nclandrei/ticketguru/jira"
 	"io/ioutil"
 	"net"
 	"net/http"

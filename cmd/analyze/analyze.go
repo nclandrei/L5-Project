@@ -5,9 +5,9 @@ import (
 	"flag"
 	"fmt"
 	"github.com/joho/godotenv"
-	"github.com/nclandrei/L5-Project/analyze"
-	"github.com/nclandrei/L5-Project/db"
-	"github.com/nclandrei/L5-Project/jira"
+	"github.com/nclandrei/ticketguru/analyze"
+	"github.com/nclandrei/ticketguru/db"
+	"github.com/nclandrei/ticketguru/jira"
 	"log"
 	"os"
 )
