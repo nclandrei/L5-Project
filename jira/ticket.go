@@ -56,17 +56,20 @@ const (
 
 // Ticket defines a Jira issue ticket.
 type Ticket struct {
-	Key                 string    `json:"key" bson:"_id"`
-	Expand              string    `json:"_"`
-	ID                  string    `json:"-"`
-	Self                string    `json:"-"`
-	Fields              Fields    `json:"fields"`
-	Changelog           Changelog `json:"changelog"`
-	TimeToClose         float64
-	Sentiment           Sentiment
-	GrammarCorrectness  GrammarCorrectness
-	HasStackTrace       bool
-	HasStepsToReproduce bool
+	Key                   string    `json:"key" bson:"_id"`
+	Expand                string    `json:"_"`
+	ID                    string    `json:"-"`
+	Self                  string    `json:"-"`
+	Fields                Fields    `json:"fields"`
+	Changelog             Changelog `json:"changelog"`
+	TimeToClose           float64
+	Sentiment             Sentiment
+	GrammarCorrectness    GrammarCorrectness
+	HasStackTrace         bool
+	HasStepsToReproduce   bool
+	SummaryDescWordsCount int
+	CommentWordsCount     int
+	HasAttachments        bool
 }
 
 // Sentiment holds information regarding the sentiment analysis score and if the analysis has been conducted.
