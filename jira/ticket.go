@@ -40,7 +40,7 @@ func (t Time) MarshalJSON() ([]byte, error) {
 	return []byte(jTime), nil
 }
 
-// Ticket defines a Jira issue ticket.
+// Ticket defines a Jira ticket.
 type Ticket struct {
 	Key                   string    `json:"key" bson:"_id"`
 	Expand                string    `json:"_"`
