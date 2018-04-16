@@ -39,9 +39,23 @@ func CountWordsSummaryDesc(tickets ...jira.Ticket) {
 	}
 }
 
-// HasStepsToReproduce returns whether an ticket has steps to reproduce or not inside either
-// description or any of the comments.
-func HasStepsToReproduce(tickets ...jira.Ticket) {
+// CountWordsComments counts the number of words in all comments for a variadic number of tickets.
+func CountWordsComments(tickets ...jira.Ticket) error {
+	for i := range tickets {
+		if isTicketHighPriority(tickets[i]) {
+			commConcat, err := concatenateComments(tickets[i])
+			if err != nil {
+				return err
+			}
+			tickets[i].CommentWordsCount = calculateNumberOfWords(commConcat)
+		}
+	}
+	return nil
+}
+
+// HaveStepsToReproduce returns whether a variadic number of tickets have steps to reproduce or not inside
+// summary, description or any of the comments.
+func HaveStepsToReproduce(tickets ...jira.Ticket) {
 	expr := `(\n(\s*)\*(.*)){2,}`
 	for i := range tickets {
 		if !isTicketHighPriority(tickets[i]) {
@@ -65,9 +79,9 @@ func HasStepsToReproduce(tickets ...jira.Ticket) {
 	}
 }
 
-// HasStackTrace checks whether a variadic number of tickets have stack traces attached either
+// HaveStackTrace checks whether a variadic number of tickets have stack traces attached either
 // inside the description or any of the comments.
-func HasStackTrace(tickets ...jira.Ticket) {
+func HaveStackTrace(tickets ...jira.Ticket) {
 	expr := `^.+Exception[^\n]+\n(\s*at.+\s*\n)+`
 	for i := range tickets {
 		if !isTicketHighPriority(tickets[i]) {
