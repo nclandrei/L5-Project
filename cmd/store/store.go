@@ -93,7 +93,7 @@ func main() {
 			if err != nil {
 				logger.Printf("error while getting issues: %v\n", err)
 			}
-			err = boltDB.InsertIssues(issues...)
+			err = boltDB.Insert(issues...)
 			if err != nil {
 				logger.Printf("could not add issues to bolt: %v\n", err)
 			}
