@@ -147,10 +147,10 @@ func (client *Client) Tickets(
 	return searchResponse.Issues, nil
 }
 
-// GetNumberOfIssues returns the total number of issues for a Jira project
-func (client *Client) GetNumberOfIssues(projectName string) (int, error) {
+// TicketsCount returns the total number of issues for a Jira project
+func (client *Client) TicketsCount(project string) (int, error) {
 	client.URL.Path = "/jira/rest/api/2/search"
-	client.URL.RawQuery = "jql=project=" + projectName
+	client.URL.RawQuery = "jql=project=" + project
 	resp, err := client.Get(client.URL.String())
 	if err != nil {
 		return -1, err
