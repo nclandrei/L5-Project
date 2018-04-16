@@ -66,7 +66,7 @@ func main() {
 		logger.Fatalf("could not create Jira client: %v\n", err)
 	}
 
-	boltDB, err := db.NewBoltDB(*dbPath)
+	boltDB, err := db.NewBolt(*dbPath)
 	if err != nil {
 		logger.Fatalf("could not create Bolt DB: %v\n", err)
 	}

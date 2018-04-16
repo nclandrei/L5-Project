@@ -22,13 +22,13 @@ type TicketStorage interface {
 	Size() (int, error)
 }
 
-// BoltDB holds the information related to an instance of Bolt Database.
-type BoltDB struct {
+// Bolt holds the information related to an instance of Bolt Database.
+type Bolt struct {
 	*bolt.DB
 }
 
-// NewBoltDB returns a new Bolt Database instance.
-func NewBoltDB(path string) (*BoltDB, error) {
+// NewBolt returns a new Bolt Database instance.
+func NewBolt(path string) (*Bolt, error) {
 	options := &bolt.Options{
 		Timeout: 20 * time.Second,
 	}
@@ -43,13 +43,13 @@ func NewBoltDB(path string) (*BoltDB, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &BoltDB{
+	return &Bolt{
 		DB: db,
 	}, err
 }
 
 // Insert takes a slice of tickets and inserts them into Bolt.
-func (db *BoltDB) Insert(tickets ...jira.Ticket) error {
+func (db *Bolt) Insert(tickets ...jira.Ticket) error {
 	for _, ticket := range tickets {
 		tx, err := db.Begin(true)
 		if err != nil {
@@ -72,7 +72,7 @@ func (db *BoltDB) Insert(tickets ...jira.Ticket) error {
 }
 
 // TicketByKey returns a single ticket searched for by key.
-func (db *BoltDB) TicketByKey(key string) (*jira.Ticket, error) {
+func (db *Bolt) TicketByKey(key string) (*jira.Ticket, error) {
 	tx, err := db.Begin(false)
 	if err != nil {
 		return nil, err
@@ -95,7 +95,7 @@ func (db *BoltDB) TicketByKey(key string) (*jira.Ticket, error) {
 }
 
 // Tickets retrieves all the tickets from inside the database.
-func (db *BoltDB) Tickets() ([]jira.Ticket, error) {
+func (db *Bolt) Tickets() ([]jira.Ticket, error) {
 	var tickets []jira.Ticket
 	tx, err := db.Begin(false)
 	if err != nil {
@@ -118,7 +118,7 @@ func (db *BoltDB) Tickets() ([]jira.Ticket, error) {
 }
 
 // Slice returns a ticket slice given a low and high bound.
-func (db *BoltDB) Slice(l, h int) ([]jira.Ticket, error) {
+func (db *Bolt) Slice(l, h int) ([]jira.Ticket, error) {
 	if l >= h {
 		return nil, fmt.Errorf("low bound is greater than high bound")
 	}
@@ -158,7 +158,7 @@ func (db *BoltDB) Slice(l, h int) ([]jira.Ticket, error) {
 }
 
 // Cursor returns a cursor to the users inside the bucket as well as a function to close the open tx.
-func (db *BoltDB) Cursor() (*bolt.Cursor, func() error, error) {
+func (db *Bolt) Cursor() (*bolt.Cursor, func() error, error) {
 	tx, err := db.Begin(false)
 	if err != nil {
 		return nil, nil, err
@@ -171,7 +171,7 @@ func (db *BoltDB) Cursor() (*bolt.Cursor, func() error, error) {
 }
 
 // Size returns the total number of key/value pairs inside the tickets bucket.
-func (db *BoltDB) Size() (int, error) {
+func (db *Bolt) Size() (int, error) {
 	tx, err := db.Begin(false)
 	if err != nil {
 		return -1, err

@@ -13,7 +13,7 @@ import (
 )
 
 func main() {
-	boltDB, err := db.NewBoltDB("users.db")
+	boltDB, err := db.NewBolt("users.db")
 	if err != nil {
 		log.Fatalf("could not access Bolt DB: %v\n", err)
 	}
