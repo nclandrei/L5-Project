@@ -7,7 +7,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/nclandrei/ticketguru/analyze"
 	"github.com/nclandrei/ticketguru/db"
-	"github.com/nclandrei/ticketguru/jira"
+	// "github.com/nclandrei/ticketguru/jira"
 	"log"
 	"os"
 )
@@ -19,7 +19,8 @@ func main() {
 	}
 
 	var analysisType string
-	flag.StringVar(&analysisType, "type", "all", "type of analysis to run; available types: grammar, sentiment, all")
+	flag.StringVar(&analysisType, "type", "all", "type of analysis to run; available types: grammar, sentiment, " +
+		"stack_traces, steps_to_reproduce, attachments, comment_complexity, fields_complexity, all")
 
 	flag.Parse()
 
@@ -29,6 +30,7 @@ func main() {
 	}
 
 	var clients []analyze.Scorer
+	var analysisFuncs []analyze.TicketAnalysis
 
 	switch analysisType {
 	case "grammar":
@@ -41,6 +43,13 @@ func main() {
 		}
 		clients = append(clients, sentimentClient)
 		break
+	case "steps_to_reproduce":
+		analysisFuncs = append(analysisFuncs, analyze.HaveStepsToReproduce)
+		break
+	case "stack_traces":
+		analysisFuncs = append(analysisFuncs, analyze.HaveStackTrace)
+		break
+	case "have"
 	case "all":
 		sentimentClient, err := analyze.NewSentimentClient(context.Background())
 		if err != nil {
@@ -57,30 +66,43 @@ func main() {
 		os.Exit(1)
 	}
 
-	totalIssueLen, err := boltDB.Size()
+	// totalIssueLen, err := boltDB.Size()
+	// if err != nil {
+	// 	log.Fatalf("could not retrieve issues bucket size: %v\n", err)
+	// }
+
+	// sliceSize := 10000
+	// highBound := sliceSize
+	// issues := make([]jira.Ticket, sliceSize)
+
+	// for i := 0; i < totalIssueLen; i += sliceSize {
+	// 	if i+highBound > totalIssueLen {
+	// 		highBound = totalIssueLen % sliceSize
+	// 	}
+	// 	issues, err = boltDB.Slice(i, i+highBound)
+	// 	if err != nil {
+	// 		log.Fatalf("could not get issue slice: %v\n", err)
+	// 	}
+	// 	err = analyze.MultipleScores(issues, clients...)
+	// 	if err != nil {
+	// 		log.Printf("could not calculate scores: \n%v\n", err)
+	// 	}
+	// 	err = boltDB.Insert(issues...)
+	// 	if err != nil {
+	// 		log.Fatalf("could not insert issues in db: %v\n", err)
+	// 	}
+	// }
+	tickets, err := boltDB.Tickets()
 	if err != nil {
-		log.Fatalf("could not retrieve issues bucket size: %v\n", err)
+		log.Fatalf("could not get all issues inside the database: %v\n", err)
 	}
-
-	sliceSize := 10000
-	highBound := sliceSize
-	issues := make([]jira.Ticket, sliceSize)
-
-	for i := 0; i < totalIssueLen; i += sliceSize {
-		if i+highBound > totalIssueLen {
-			highBound = totalIssueLen % sliceSize
-		}
-		issues, err = boltDB.Slice(i, i+highBound)
-		if err != nil {
-			log.Fatalf("could not get issue slice: %v\n", err)
-		}
-		err = analyze.MultipleScores(issues, clients...)
-		if err != nil {
-			log.Printf("could not calculate scores: \n%v\n", err)
-		}
-		err = boltDB.Insert(issues...)
-		if err != nil {
-			log.Fatalf("could not insert issues in db: %v\n", err)
-		}
+	analyze.CountWordsComments(tickets...)
+	analyze.CountWordsSummaryDesc(tickets...)
+	analyze.HaveStackTrace(tickets...)
+	analyze.HaveStepsToReproduce(tickets...)
+	analyze.TimesToClose(tickets...)
+	err = boltDB.Insert(tickets...)
+	if err != nil {
+		log.Fatalf("could not insert tickets: %v\n", err)
 	}
 }
