@@ -33,8 +33,8 @@ func TimesToClose(tickets ...jira.Ticket) {
 	}
 }
 
-// CountWordsSummaryDesc counts the number of words in summary and description for a variadic number of tickets.
-func CountWordsSummaryDesc(tickets ...jira.Ticket) {
+// FieldsComplexity counts the number of words in summary and description for a variadic number of tickets.
+func FieldsComplexity(tickets ...jira.Ticket) {
 	for i := range tickets {
 		if isTicketHighPriority(tickets[i]) {
 			tickets[i].SummaryDescWordsCount = calculateNumberOfWords(tickets[i].Fields.Description) +
@@ -56,8 +56,8 @@ func CommentsComplexity(tickets ...jira.Ticket) {
 func Attachments(tickets ...jira.Ticket) {
 	for i := range tickets {
 		if isTicketHighPriority(tickets[i]) {
-			for _, attachment := range tickets[i].Fields.Attachments {
-
+			for j := range tickets[i].Fields.Attachments {
+				tickets[i].Fields.Attachments[j].Type = attachmentType(tickets[i].Fields.Attachments[j])
 			}
 		}
 	}
