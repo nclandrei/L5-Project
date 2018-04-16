@@ -55,7 +55,6 @@ type Ticket struct {
 	HasStepsToReproduce   bool
 	SummaryDescWordsCount int
 	CommentWordsCount     int
-	HasAttachments        bool
 }
 
 // Sentiment holds information regarding the sentiment analysis score and if the analysis has been conducted.
@@ -122,14 +121,33 @@ type ChangelogHistoryItem struct {
 
 // Attachment defines a Jira attachment.
 type Attachment struct {
-	ID       string `json:"id,omitempty"`
-	Author   Author `json:"author,omitempty"`
-	Filename string `json:"filename,omitempty"`
-	Created  Time   `json:"created,omitempty"`
-	Size     int    `json:"size,omitempty"`
-	MimeType string `json:"mimeType,omitempty"`
-	Content  string `json:"content,omitempty"`
+	ID       string         `json:"id,omitempty"`
+	Author   Author         `json:"author,omitempty"`
+	Filename string         `json:"filename,omitempty"`
+	Created  Time           `json:"created,omitempty"`
+	Size     int            `json:"size,omitempty"`
+	MimeType string         `json:"mimeType,omitempty"`
+	Content  string         `json:"content,omitempty"`
+	Type     AttachmentType `json:"attachment_type,omitempty"`
 }
+
+// AttachmentType maps the extension of the attachment to a predefined type (e.g. image).
+type AttachmentType int
+
+const (
+	// Image represents the image type of an attachment (e.g. png, jpg).
+	Image AttachmentType = iota + 1
+	// Video represents the video type of an attachmnet (e.g. mkv, mp4, avi).
+	Video
+	// Code represents the code snippet type of an attachmnet (e.g. go, java, groovy).
+	Code
+	// Spreadsheet represents the spreadsheet type of an attachmnet (e.g. numbers, csv, xlsx).
+	Spreadsheet
+	// Text represents the text type of an attachment (e.g. md, txt, org).
+	Text
+	// Other represents any other extension of the attachment that is not relevant to the analysis.
+	Other
+)
 
 // Type defines the type of a ticket in Jira.
 type Type struct {
