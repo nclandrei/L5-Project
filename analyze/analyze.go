@@ -106,38 +106,6 @@ func calculateNumberOfWords(s string) int {
 	return wordCount
 }
 
-// GetAttachmentType returns the attachment type based on the file extension.
-func getAttachmentType(filename string) jira.AttachmentType {
-	extIndex := strings.LastIndex(filename, ".")
-	ext := filename[(extIndex + 1):]
-	switch ext {
-	case "md":
-		return jira.Text
-	case "txt":
-		return jira.Text
-	case "pdf":
-		return jira.Text
-	case "png":
-		return jira.Image
-	case "jpg":
-		return jira.Image
-	case "jpeg":
-		return jira.Image
-	case "gif":
-		return jira.Image
-	case "bmp":
-		return jira.Image
-	case "mp4":
-		return jira.Video
-	case "avi":
-		return jira.Video
-	case "mkv":
-		return jira.Video
-	default:
-		return jira.Code
-	}
-}
-
 // concatAndRemoveNewLines takes a variadic number of strings and returns a concatenated form with
 // all of them having newlines replaced by whitespaces.
 func concatAndRemoveNewlines(strs ...string) (string, error) {

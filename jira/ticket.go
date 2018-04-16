@@ -12,9 +12,6 @@ const timeFormat = "2006-01-02T15:04:05.000-0700"
 // Time holds the time formatted in Jira's specific format.
 type Time time.Time
 
-// AttachmentType defines the attachment file type inside Jira tickets.
-type AttachmentType int
-
 // UnmarshalJSON represents the formatting of JSON time for Jira's specific format
 func (t *Time) UnmarshalJSON(b []byte) error {
 	s := strings.Trim(string(b), "\"")
@@ -42,17 +39,6 @@ func (t Time) MarshalJSON() ([]byte, error) {
 	jTime := fmt.Sprintf("\"%s\"", time.Time(t).Format(timeFormat))
 	return []byte(jTime), nil
 }
-
-const (
-	// Image type for attachments (e.g. png, jpg, jpeg)
-	Image AttachmentType = iota + 1
-	// Text type for attachments (e.g. txt, md)
-	Text
-	// Code type for attachments (e.g. go, java, clj)
-	Code
-	// Video type for attachments (e.g. mp4, mkv, avi)
-	Video
-)
 
 // Ticket defines a Jira issue ticket.
 type Ticket struct {
