@@ -193,7 +193,7 @@ func concatenateComments(issue jira.Issue) (string, error) {
 }
 
 // calculateTimeDifference calculates the duration in hours between 2 different timestamps.
-func calculateTimeDifference(t1, t2 jira.JTime) float64 {
+func calculateTimeDifference(t1, t2 jira.Time) float64 {
 	return time.Time(t1).Sub(time.Time(t2)).Hours()
 }
 

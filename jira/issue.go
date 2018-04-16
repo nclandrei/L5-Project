@@ -9,18 +9,18 @@ import (
 // Custom time format corresponding to Jira format
 const timeFormat = "2006-01-02T15:04:05.000-0700"
 
-// JTime holds the time formatted in Jira's specific format
-type JTime time.Time
+// Time holds the time formatted in Jira's specific format
+type Time time.Time
 
 // AttachmentType defines the attachment file type inside Jira issues
 type AttachmentType int
 
 // UnmarshalJSON represents the formatting of JSON time for Jira's specific format
-func (t *JTime) UnmarshalJSON(b []byte) error {
+func (t *Time) UnmarshalJSON(b []byte) error {
 	s := strings.Trim(string(b), "\"")
 
 	if s == "null" {
-		*t = JTime(time.Time{})
+		*t = Time(time.Time{})
 		return nil
 	}
 
@@ -32,13 +32,13 @@ func (t *JTime) UnmarshalJSON(b []byte) error {
 		}
 	}
 
-	*t = JTime(jiraTime)
+	*t = Time(jiraTime)
 
 	return nil
 }
 
 // MarshalJSON marshals a JiraTime struct into a slice of bytes
-func (t JTime) MarshalJSON() ([]byte, error) {
+func (t Time) MarshalJSON() ([]byte, error) {
 	jTime := fmt.Sprintf("\"%s\"", time.Time(t).Format(timeFormat))
 	return []byte(jTime), nil
 }
@@ -87,10 +87,10 @@ type Fields struct {
 	Description  string       `json:"description,omitempty"`
 	TimeEstimate int          `json:"timeestimate,omitempty"`
 	TimeSpent    int          `json:"timespent,omitempty"`
-	Created      JTime        `json:"created"`
+	Created      Time         `json:"created"`
 	Attachments  []Attachment `json:"attachment,omitempty"`
 	Status       Status       `json:"status,omitempty"`
-	DueDate      JTime        `json:"duedate,omitempty"`
+	DueDate      Time         `json:"duedate,omitempty"`
 	Comments     Comments     `json:"comment,omitempty"`
 	Priority     Priority     `json:"priority,omitempty"`
 	IssueType    IssueType    `json:"issuetype,omitempty"`
@@ -108,7 +108,7 @@ type Changelog struct {
 type ChangelogHistory struct {
 	ID      string                 `json:"id,omitempty"`
 	Author  Author                 `json:"author,omitempty"`
-	Created JTime                  `json:"created,omitempty"`
+	Created Time                   `json:"created,omitempty"`
 	Items   []ChangelogHistoryItem `json:"items,omitempty"`
 }
 
@@ -136,7 +136,7 @@ type Attachment struct {
 	ID       string `json:"id,omitempty"`
 	Author   Author `json:"author,omitempty"`
 	Filename string `json:"filename,omitempty"`
-	Created  JTime  `json:"created,omitempty"`
+	Created  Time   `json:"created,omitempty"`
 	Size     int    `json:"size,omitempty"`
 	MimeType string `json:"mimeType,omitempty"`
 	Content  string `json:"content,omitempty"`
@@ -173,6 +173,6 @@ type Comment struct {
 	ID      string `json:"id,omitempty"`
 	Body    string `json:"body,omitempty"`
 	Author  Author `json:"author"`
-	Created JTime  `json:"created,omitempty"`
-	Updated JTime  `json:"updated,omitempty"`
+	Created Time   `json:"created,omitempty"`
+	Updated Time   `json:"updated,omitempty"`
 }
