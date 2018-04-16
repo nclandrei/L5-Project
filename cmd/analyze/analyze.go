@@ -64,7 +64,7 @@ func main() {
 
 	sliceSize := 10000
 	highBound := sliceSize
-	issues := make([]jira.Issue, sliceSize)
+	issues := make([]jira.Ticket, sliceSize)
 
 	for i := 0; i < totalIssueLen; i += sliceSize {
 		if i+highBound > totalIssueLen {

@@ -89,7 +89,7 @@ func main() {
 		wg.Add(1)
 		go func(index int) {
 			defer wg.Done()
-			issues, err := jiraClient.GetIssues(*project, index, int(issueSliceSize))
+			issues, err := jiraClient.Tickets(*project, index, int(issueSliceSize))
 			if err != nil {
 				logger.Printf("error while getting issues: %v\n", err)
 			}

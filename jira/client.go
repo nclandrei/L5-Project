@@ -24,11 +24,11 @@ type Client struct {
 
 // SearchResponse defines the response payload retrieved through the search endpoint
 type SearchResponse struct {
-	Expand     string  `json:"expand,omitempty"`
-	StartAt    int     `json:"startAt,omitempty"`
-	MaxResults int     `json:"maxResults,omitempty"`
-	Total      int     `json:"total,omitempty"`
-	Issues     []Issue `json:"issues,omitempty"`
+	Expand     string   `json:"expand,omitempty"`
+	StartAt    int      `json:"startAt,omitempty"`
+	MaxResults int      `json:"maxResults,omitempty"`
+	Total      int      `json:"total,omitempty"`
+	Issues     []Ticket `json:"issues,omitempty"`
 }
 
 // Session represents a Session JSON response by the JIRA API.
@@ -51,7 +51,7 @@ type Session struct {
 // ClientOption defines an optional function to be applied on a Jira client.
 type ClientOption func(*Client) (*Client, error)
 
-// NewClient returns a new Jira Client
+// NewClient returns a new Jira Client.
 func NewClient(url *url.URL) (*Client, error) {
 	cookieJar, err := cookiejar.New(nil)
 	if err != nil {
@@ -76,7 +76,7 @@ func NewClient(url *url.URL) (*Client, error) {
 	}, nil
 }
 
-// setSearchPath sets the URL path for JQL search on a Jira client
+// setSearchPath sets the URL path for JQL search on a Jira client.
 func (client *Client) setSearchPath(projectName string, paginationIndex, pageCount int) {
 	client.lock.Lock()
 	client.URL.Path = "/jira/rest/api/2/search"
@@ -90,7 +90,7 @@ func (client *Client) setSearchPath(projectName string, paginationIndex, pageCou
 	client.lock.Unlock()
 }
 
-// AuthenticateClient authenticates a Jira client with a specific instance of Jira
+// AuthenticateClient authenticates a Jira client with a specific instance of Jira.
 func (client *Client) AuthenticateClient() error {
 	authenticationRequest := struct {
 		Username string `json:"username"`
@@ -124,11 +124,11 @@ func (client *Client) AuthenticateClient() error {
 	return nil
 }
 
-// GetIssues adds to channels responses retrieved from Jira
-func (client *Client) GetIssues(
+// Tickets returns a paginated slice of tickets from Jira.
+func (client *Client) Tickets(
 	projectName string,
 	paginationIndex int,
-	pageCount int) ([]Issue, error) {
+	pageCount int) ([]Ticket, error) {
 
 	client.setSearchPath(projectName, paginationIndex, pageCount)
 	resp, err := client.Get(client.URL.String())

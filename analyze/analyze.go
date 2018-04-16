@@ -9,7 +9,7 @@ import (
 )
 
 // WordinessAnalysis returns wordiness of a field (summary/comment/description) and time-to-complete (in hours).
-func WordinessAnalysis(issues []jira.Issue, field string) ([]float64, []float64) {
+func WordinessAnalysis(issues []jira.Ticket, field string) ([]float64, []float64) {
 	var wordCountSlice []float64
 	var timeDiffs []float64
 	for _, issue := range issues {
@@ -37,7 +37,7 @@ func WordinessAnalysis(issues []jira.Issue, field string) ([]float64, []float64)
 }
 
 // AttachmentsAnalysis returns time-to-complete (in hours) for all issues with and without attachments.
-func AttachmentsAnalysis(issues []jira.Issue) ([]float64, []float64) {
+func AttachmentsAnalysis(issues []jira.Ticket) ([]float64, []float64) {
 	var withAttchTimeDiffs []float64
 	var withoutAttchTimeDiffs []float64
 	for _, issue := range issues {
@@ -54,7 +54,7 @@ func AttachmentsAnalysis(issues []jira.Issue) ([]float64, []float64) {
 }
 
 // SentimentScoreAnalysis returns time-to-complete and sentiment scores for input issues.
-func SentimentScoreAnalysis(issues []jira.Issue) ([]float64, []float64) {
+func SentimentScoreAnalysis(issues []jira.Ticket) ([]float64, []float64) {
 	var scores []float64
 	var timeDiffs []float64
 	for _, issue := range issues {
@@ -69,7 +69,7 @@ func SentimentScoreAnalysis(issues []jira.Issue) ([]float64, []float64) {
 
 // HasStepsToReproduce returns whether an issue has steps to reproduce or not inside either
 // description or any of the comments.
-func HasStepsToReproduce(issue jira.Issue) (bool, error) {
+func HasStepsToReproduce(issue jira.Ticket) (bool, error) {
 	expr := `(\n(\s*)\*(.*)){2,}`
 	contains, err := containsRegex(issue.Fields.Description, expr)
 	if err != nil {
@@ -92,7 +92,7 @@ func HasStepsToReproduce(issue jira.Issue) (bool, error) {
 
 // HasStackTrace returns whether an issue has a stack trace attached either inside the description
 // or any of the comments.
-func HasStackTrace(issue jira.Issue) (bool, error) {
+func HasStackTrace(issue jira.Ticket) (bool, error) {
 	expr := `^.+Exception[^\n]+\n(\s*at.+\s*\n)+`
 	contains, err := containsRegex(issue.Fields.Description, expr)
 	if err != nil {
@@ -182,7 +182,7 @@ func concatAndRemoveNewlines(strs ...string) (string, error) {
 }
 
 // ConcatenateComments returns a string containing all the comment bodies concatenated.
-func concatenateComments(issue jira.Issue) (string, error) {
+func concatenateComments(issue jira.Ticket) (string, error) {
 	var builder strings.Builder
 	for _, comment := range issue.Fields.Comments.Comments {
 		if _, err := builder.WriteString(comment.Body); err != nil {
@@ -198,12 +198,12 @@ func calculateTimeDifference(t1, t2 jira.Time) float64 {
 }
 
 // isIssueHighPriority checks whether an issue has priority ID either 1 or 2 (i.e. Critical or Major).
-func isIssueHighPriority(issue jira.Issue) bool {
+func isIssueHighPriority(issue jira.Ticket) bool {
 	return issue.Fields.Priority.ID == "1" || issue.Fields.Priority.ID == "2"
 }
 
 // timeToResolve, given an issue, returns how much time it took to close that issue.
-func timeToResolve(issue jira.Issue) float64 {
+func timeToResolve(issue jira.Ticket) float64 {
 	for _, history := range issue.Changelog.Histories {
 		for _, item := range history.Items {
 			if item.Field == "status" && item.FromString == "Open" && item.ToString == "Closed" {

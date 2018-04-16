@@ -24,7 +24,7 @@ const (
 
 // Scorer defines an interface for holding the different types of language scorers available.
 type Scorer interface {
-	Scores(...jira.Issue) error
+	Scores(...jira.Ticket) error
 }
 
 // BingClient defines a new Bing Spell Check client.
@@ -66,7 +66,7 @@ func NewBingClient(key string) *BingClient {
 }
 
 // Scores returns the grammar correctness scores for all issues given as input parameters.
-func (client *BingClient) Scores(issues ...jira.Issue) error {
+func (client *BingClient) Scores(issues ...jira.Ticket) error {
 	errCh := make(chan error, len(issues))
 	var rateLimit int
 	if bingRateLimit > len(issues) {
@@ -156,7 +156,7 @@ func NewSentimentClient(ctx context.Context) (*SentimentClient, error) {
 }
 
 // Scores calculates the sentiment score for an issue's comments after querying GCP.
-func (client *SentimentClient) Scores(issues ...jira.Issue) error {
+func (client *SentimentClient) Scores(issues ...jira.Ticket) error {
 	errCh := make(chan error, len(issues))
 	var rateLimit int
 	if gcpRateLimit > len(issues) {
@@ -215,7 +215,7 @@ func (client *SentimentClient) Scores(issues ...jira.Issue) error {
 }
 
 // MultipleScores takes multiple issues and scorers and returns a map for each scorer to its corresponding scores.
-func MultipleScores(issues []jira.Issue, scorers ...Scorer) error {
+func MultipleScores(issues []jira.Ticket, scorers ...Scorer) error {
 	errCh := make(chan error, len(scorers))
 	for i := range scorers {
 		go func(i int) {

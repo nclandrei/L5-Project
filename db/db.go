@@ -16,9 +16,9 @@ const (
 
 // IssueStorage defines a generic interface for different DBs to implement.
 type IssueStorage interface {
-	Issues() ([]jira.Issue, error)
-	Insert(...jira.Issue) error
-	Slice(int, int) ([]jira.Issue, error)
+	Issues() ([]jira.Ticket, error)
+	Insert(...jira.Ticket) error
+	Slice(int, int) ([]jira.Ticket, error)
 	Size() (int, error)
 }
 
@@ -49,7 +49,7 @@ func NewBoltDB(path string) (*BoltDB, error) {
 }
 
 // Insert takes a slice of issues and inserts them into Bolt.
-func (db *BoltDB) Insert(issues ...jira.Issue) error {
+func (db *BoltDB) Insert(issues ...jira.Ticket) error {
 	for _, issue := range issues {
 		tx, err := db.Begin(true)
 		if err != nil {
@@ -72,7 +72,7 @@ func (db *BoltDB) Insert(issues ...jira.Issue) error {
 }
 
 // IssueByKey returns a single issue searched for by key.
-func (db *BoltDB) IssueByKey(key string) (*jira.Issue, error) {
+func (db *BoltDB) IssueByKey(key string) (*jira.Ticket, error) {
 	tx, err := db.Begin(false)
 	if err != nil {
 		return nil, err
@@ -82,7 +82,7 @@ func (db *BoltDB) IssueByKey(key string) (*jira.Issue, error) {
 	if b == nil {
 		return nil, fmt.Errorf("could not retrieve users bucket from bolt")
 	}
-	var issue *jira.Issue
+	var issue *jira.Ticket
 	bIssue := b.Get([]byte(key))
 	if bIssue == nil {
 		return nil, nil
@@ -95,8 +95,8 @@ func (db *BoltDB) IssueByKey(key string) (*jira.Issue, error) {
 }
 
 // Issues retrieves all the issues from inside the database.
-func (db *BoltDB) Issues() ([]jira.Issue, error) {
-	var issues []jira.Issue
+func (db *BoltDB) Issues() ([]jira.Ticket, error) {
+	var issues []jira.Ticket
 	tx, err := db.Begin(false)
 	if err != nil {
 		return nil, err
@@ -107,7 +107,7 @@ func (db *BoltDB) Issues() ([]jira.Issue, error) {
 		return nil, fmt.Errorf("could not retrieve users bucket from bolt")
 	}
 	err = b.ForEach(func(k, v []byte) error {
-		var issue jira.Issue
+		var issue jira.Ticket
 		err := json.Unmarshal(v, &issue)
 		if err == nil {
 			issues = append(issues, issue)
@@ -118,7 +118,7 @@ func (db *BoltDB) Issues() ([]jira.Issue, error) {
 }
 
 // Slice returns a issue slice given a low and high bound.
-func (db *BoltDB) Slice(l, h int) ([]jira.Issue, error) {
+func (db *BoltDB) Slice(l, h int) ([]jira.Ticket, error) {
 	if l >= h {
 		return nil, fmt.Errorf("low bound is greater than high bound")
 	}
@@ -132,7 +132,7 @@ func (db *BoltDB) Slice(l, h int) ([]jira.Issue, error) {
 	if l > size || h > size {
 		return nil, fmt.Errorf("bounds greater than bucket size")
 	}
-	issues := make([]jira.Issue, h-l)
+	issues := make([]jira.Ticket, h-l)
 	err = db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(bucketName))
 		cursor := b.Cursor()
@@ -143,7 +143,7 @@ func (db *BoltDB) Slice(l, h int) ([]jira.Issue, error) {
 			i++
 		}
 		for i < h {
-			var issue jira.Issue
+			var issue jira.Ticket
 			err := json.Unmarshal(v, &issue)
 			if err != nil {
 				return err
