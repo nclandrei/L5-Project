@@ -6,13 +6,13 @@ import (
 	"time"
 )
 
-// Custom time format corresponding to Jira format
+// Custom time format corresponding to Jira format.
 const timeFormat = "2006-01-02T15:04:05.000-0700"
 
-// Time holds the time formatted in Jira's specific format
+// Time holds the time formatted in Jira's specific format.
 type Time time.Time
 
-// AttachmentType defines the attachment file type inside Jira issues
+// AttachmentType defines the attachment file type inside Jira tickets.
 type AttachmentType int
 
 // UnmarshalJSON represents the formatting of JSON time for Jira's specific format
@@ -54,8 +54,8 @@ const (
 	Video
 )
 
-// Issue defines the Jira issue retrieved via the REST API
-type Issue struct {
+// Ticket defines a Jira issue ticket.
+type Ticket struct {
 	Key                 string    `json:"key" bson:"_id"`
 	Expand              string    `json:"_"`
 	ID                  string    `json:"-"`
@@ -93,10 +93,10 @@ type Fields struct {
 	DueDate      Time         `json:"duedate,omitempty"`
 	Comments     Comments     `json:"comment,omitempty"`
 	Priority     Priority     `json:"priority,omitempty"`
-	IssueType    Type         `json:"issuetype,omitempty"`
+	Type         Type         `json:"issuetype,omitempty"`
 }
 
-// Changelog defines the entire changelog of a Jira issue
+// Changelog defines the entire changelog of a Jira ticket.
 type Changelog struct {
 	StartAt    int                `json:"startAt"`
 	MaxResults int                `json:"maxResults"`
@@ -104,7 +104,7 @@ type Changelog struct {
 	Histories  []ChangelogHistory `json:"histories,omitempty"`
 }
 
-// ChangelogHistory defines the entire history for some specific items
+// ChangelogHistory defines the entire history for some specific items.
 type ChangelogHistory struct {
 	ID      string                 `json:"id,omitempty"`
 	Author  Author                 `json:"author,omitempty"`
@@ -112,7 +112,7 @@ type ChangelogHistory struct {
 	Items   []ChangelogHistoryItem `json:"items,omitempty"`
 }
 
-// Author holds the author for any jira issue field
+// Author holds the author for any jira ticket field.
 type Author struct {
 	Name        string `json:"name,omitempty"`
 	Email       string `json:"emailAddress,omitempty"`
@@ -121,7 +121,7 @@ type Author struct {
 	TimeZone    string `json:"timeZone,omitempty"`
 }
 
-// ChangelogHistoryItem defines a specific item inside a changelog history for a Jira issue
+// ChangelogHistoryItem defines a specific item inside a changelog history for a Jira ticket.
 type ChangelogHistoryItem struct {
 	Field      string `json:"field,omitempty"`
 	FieldType  string `json:"fieldtype,omitempty"`
@@ -131,7 +131,7 @@ type ChangelogHistoryItem struct {
 	ToString   string `json:"toString,omitempty"`
 }
 
-// Attachment defines a Jira attachment
+// Attachment defines a Jira attachment.
 type Attachment struct {
 	ID       string `json:"id,omitempty"`
 	Author   Author `json:"author,omitempty"`
@@ -142,20 +142,20 @@ type Attachment struct {
 	Content  string `json:"content,omitempty"`
 }
 
-// Type defines the issue type in Jira
+// Type defines the type of a ticket in Jira.
 type Type struct {
 	ID          string `json:"id,omitempty"`
 	Name        string `json:"name,omitempty"`
 	Description string `json:"description,omitempty"`
 }
 
-// Priority holds the type of priority assigned to a Jira issue
+// Priority holds the type of priority assigned to a Jira ticket.
 type Priority struct {
 	ID   string `json:"id,omitempty"`
 	Name string `json:"name,omitempty"`
 }
 
-// Status defines the Jira issue status
+// Status defines the Jira ticket status.
 type Status struct {
 	ID             string   `json:"id,omitempty"`
 	Description    string   `json:"description,omitempty"`
@@ -163,12 +163,12 @@ type Status struct {
 	StatusCategory struct{} `json:"-"`
 }
 
-// Comments defines the Jira field that holds the comments
+// Comments defines the Jira field that holds the comments.
 type Comments struct {
 	Comments []Comment `json:"comments,omitempty"`
 }
 
-// Comment defines the structure of a Jira issue comment
+// Comment defines the structure of a Jira ticket comment.
 type Comment struct {
 	ID      string `json:"id,omitempty"`
 	Body    string `json:"body,omitempty"`
