@@ -175,11 +175,7 @@ func (client *SentimentClient) Scores(issues ...jira.Ticket) error {
 					errCh <- nil
 					return
 				}
-				concatComm, err := concatenateComments(issues[i+j])
-				if err != nil {
-					errCh <- err
-					return
-				}
+				concatComm := concatenateComments(issues[i+j])
 				sentiment, err := client.AnalyzeSentiment(client.ctx, &languagepb.AnalyzeSentimentRequest{
 					Document: &languagepb.Document{
 						Source: &languagepb.Document_Content{
