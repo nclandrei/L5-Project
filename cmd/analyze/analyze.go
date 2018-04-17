@@ -7,6 +7,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/nclandrei/ticketguru/analyze"
 	"github.com/nclandrei/ticketguru/db"
+	"sync"
 	// "github.com/nclandrei/ticketguru/jira"
 	"log"
 	"os"
@@ -74,9 +75,17 @@ func main() {
 	}
 
 	analyze.MultipleScores(tickets, clients...)
+
+	var wg sync.WaitGroup
 	for _, f := range analysisFuncs {
-		f(tickets...)
+		wg.Add(1)
+		go func(f analyze.TicketAnalysis) {
+			defer wg.Done()
+			f(tickets...)
+		}(f)
 	}
+
+	wg.Done()
 
 	err = boltDB.Insert(tickets...)
 	if err != nil {
