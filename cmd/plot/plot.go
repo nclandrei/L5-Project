@@ -13,7 +13,7 @@ var (
 		"/Users/nclandrei/Code/go/src/github.com/nclandrei/ticketguru/users.db",
 		"path to Bolt database file",
 	)
-	plotType = flag.String("type", "all", "plot(s) to draw")
+	pType = flag.String("type", "all", "plot(s) to draw")
 )
 
 func main() {
@@ -25,8 +25,16 @@ func main() {
 	if err != nil {
 		log.Fatalf("could not get ticket slice from bolt db: %v\n", err)
 	}
-	err = plot.CommentsComplexity(tickets...)
-	if err != nil {
-		log.Fatalf("could not plot data: %v\n", err)
+	var funcs []plot.Plot
+	switch *pType {
+	case "all":
+		funcs = append(funcs, plot.CommentsComplexity, plot.FieldsComplexity)
+		break
+	}
+	for _, f := range funcs {
+		err := f(tickets...)
+		if err != nil {
+			log.Fatalf("could not plot data: %v\n", err)
+		}
 	}
 }
