@@ -15,7 +15,7 @@ type TicketAnalysis func(...jira.Ticket)
 // TimesToClose returns how much time it took to close a variadic number of tickets.
 func TimesToClose(tickets ...jira.Ticket) {
 	for i := range tickets {
-		if !isTicketHighPriority(tickets[i]) {
+		if !IsTicketHighPriority(tickets[i]) {
 			continue
 		}
 		var complete bool
@@ -36,7 +36,7 @@ func TimesToClose(tickets ...jira.Ticket) {
 // FieldsComplexity counts the number of words in summary and description for a variadic number of tickets.
 func FieldsComplexity(tickets ...jira.Ticket) {
 	for i := range tickets {
-		if isTicketHighPriority(tickets[i]) {
+		if IsTicketHighPriority(tickets[i]) {
 			tickets[i].SummaryDescWordsCount = calculateNumberOfWords(tickets[i].Fields.Description) +
 				calculateNumberOfWords(tickets[i].Fields.Summary)
 		}
@@ -46,7 +46,7 @@ func FieldsComplexity(tickets ...jira.Ticket) {
 // CommentsComplexity counts the number of words in all comments for a variadic number of tickets.
 func CommentsComplexity(tickets ...jira.Ticket) {
 	for i := range tickets {
-		if isTicketHighPriority(tickets[i]) {
+		if IsTicketHighPriority(tickets[i]) {
 			tickets[i].CommentWordsCount = calculateNumberOfWords(concatComments(tickets[i]))
 		}
 	}
@@ -55,7 +55,7 @@ func CommentsComplexity(tickets ...jira.Ticket) {
 // Attachments takes a variadic number of tickets and checks if they have attachments and what type they are.
 func Attachments(tickets ...jira.Ticket) {
 	for i := range tickets {
-		if isTicketHighPriority(tickets[i]) {
+		if IsTicketHighPriority(tickets[i]) {
 			for j := range tickets[i].Fields.Attachments {
 				tickets[i].Fields.Attachments[j].Type = attachmentType(tickets[i].Fields.Attachments[j])
 			}
@@ -97,7 +97,7 @@ func fileExtension(f string) string {
 func StepsToReproduce(tickets ...jira.Ticket) {
 	expr := `(\n(\s*)\*(.*)){2,}`
 	for i := range tickets {
-		if !isTicketHighPriority(tickets[i]) {
+		if !IsTicketHighPriority(tickets[i]) {
 			continue
 		}
 		contains := containsRegex(tickets[i].Fields.Description, expr)
@@ -123,7 +123,7 @@ func StepsToReproduce(tickets ...jira.Ticket) {
 func StackTraces(tickets ...jira.Ticket) {
 	expr := `^.+Exception[^\n]+\n(\s*at.+\s*\n)+`
 	for i := range tickets {
-		if !isTicketHighPriority(tickets[i]) {
+		if !IsTicketHighPriority(tickets[i]) {
 			continue
 		}
 		contains := containsRegex(tickets[i].Fields.Description, expr)
@@ -191,8 +191,8 @@ func calculateTimeDifference(t1, t2 jira.Time) float64 {
 	return time.Time(t1).Sub(time.Time(t2)).Hours()
 }
 
-// isTicketHighPriority checks whether a ticket is high priority.
-func isTicketHighPriority(ticket jira.Ticket) bool {
+// IsTicketHighPriority checks whether a ticket is high priority.
+func IsTicketHighPriority(ticket jira.Ticket) bool {
 	return ticket.Fields.Priority.ID == "1" || ticket.Fields.Priority.ID == "2" ||
 		ticket.Fields.Priority.ID == "3" || ticket.Fields.Priority.ID == "4"
 }
