@@ -1,8 +1,15 @@
 package plot
 
 import (
+	"fmt"
 	"github.com/nclandrei/ticketguru/jira"
 	"github.com/wcharczuk/go-chart"
+	"github.com/wcharczuk/go-chart/drawing"
+	"os"
+)
+
+const (
+	graphsPath = "resources/graphs"
 )
 
 // Plot defines a standard analysis plotting function.
@@ -25,7 +32,18 @@ func Stacktraces(tickets ...jira.Ticket) error {
 
 // CommentsComplexity produces a scatter plot with trendline for comments complexity analysis.
 func CommentsComplexity(tickets ...jira.Ticket) error {
-	return nil
+	var comms []float64
+	var times []float64
+	for _, ticket := range tickets {
+		comms = append(comms, float64(ticket.CommentWordsCount))
+		times = append(times, ticket.TimeToClose)
+	}
+	wd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+	filePath := fmt.Sprintf("%s/%s/%s", wd, graphsPath, "comment_complexity.png")
+	return scatter("Time-To-Close", "Comments Complexity", "Comments Complexity Analysis", filePath, comms, times)
 }
 
 // FieldsComplexity produces a scatter plot with trendline for fields (i.e. summary and description) complexity analysis.
@@ -43,8 +61,53 @@ func SentimentAnalysis(tickets ...jira.Ticket) error {
 	return nil
 }
 
+func scatter(xAxis, yAxis, title, filepath string, xs []float64, ys []float64) error {
+	viridisByY := func(xr, yr chart.Range, index int, x, y float64) drawing.Color {
+		return chart.Viridis(y, yr.GetMin(), yr.GetMax())
+	}
+
+	s := chart.Chart{
+		XAxis: chart.XAxis{
+			Name:  xAxis,
+			Style: chart.Style{Show: true},
+		},
+		YAxis: chart.YAxis{
+			Name:  yAxis,
+			Style: chart.Style{Show: true},
+		},
+		Background: chart.Style{
+			Padding: chart.Box{
+				Top:  20,
+				Left: 20,
+			},
+		},
+		Title: title,
+		Series: []chart.Series{
+			chart.ContinuousSeries{
+				Style: chart.Style{
+					Show:             true,
+					DotColorProvider: viridisByY,
+				},
+				XValues: xs,
+				YValues: ys,
+			},
+		},
+	}
+
+	s.Elements = []chart.Renderable{
+		chart.Legend(&s),
+	}
+
+	file, err := os.Create(filepath)
+	if err != nil {
+		return err
+	}
+
+	return s.Render(chart.PNG, file)
+}
+
 // stackedBarChart produces a
-func stackedBarChart(filename string, vals ...int) error {
+func stackedBarChart(filepath string, vals ...int) error {
 	sbc := chart.StackedBarChart{
 		Title:      "Presence and type of attachments analysis",
 		TitleStyle: chart.StyleShow(),
@@ -83,5 +146,10 @@ func stackedBarChart(filename string, vals ...int) error {
 		},
 	}
 
-	return sbc.Render(chart.PNG, nil)
+	file, err := os.Create(filepath)
+	if err != nil {
+		return err
+	}
+
+	return sbc.Render(chart.PNG, file)
 }
