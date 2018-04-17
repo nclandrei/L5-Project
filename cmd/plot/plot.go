@@ -5,6 +5,7 @@ import (
 	"github.com/nclandrei/ticketguru/db"
 	"github.com/nclandrei/ticketguru/plot"
 	"log"
+	"sync"
 )
 
 var (
@@ -21,9 +22,9 @@ func main() {
 	if err != nil {
 		log.Fatalf("could not open bolt db: %v\n", err)
 	}
-	tickets, err := boltDB.Slice(0, 1000)
+	tickets, err := boltDB.Tickets()
 	if err != nil {
-		log.Fatalf("could not get ticket slice from bolt db: %v\n", err)
+		log.Fatalf("could not get tickets from bolt db: %v\n", err)
 	}
 	var funcs []plot.Plot
 	switch *pType {
@@ -31,10 +32,16 @@ func main() {
 		funcs = append(funcs, plot.CommentsComplexity, plot.FieldsComplexity)
 		break
 	}
+	var wg sync.WaitGroup
 	for _, f := range funcs {
-		err := f(tickets...)
-		if err != nil {
-			log.Fatalf("could not plot data: %v\n", err)
-		}
+		wg.Add(1)
+		go func(f plot.Plot) {
+			defer wg.Done()
+			err := f(tickets...)
+			if err != nil {
+				log.Printf("could not plot data: %v\n", err)
+			}
+		}(f)
 	}
+	wg.Wait()
 }
