@@ -2,9 +2,11 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"github.com/nclandrei/ticketguru/db"
 	"github.com/nclandrei/ticketguru/plot"
 	"log"
+	"os"
 	"sync"
 )
 
@@ -54,6 +56,10 @@ func main() {
 		funcs = append(funcs, plot.CommentsComplexity, plot.FieldsComplexity, plot.SentimentAnalysis, plot.GrammarCorrectness,
 			plot.Stacktraces, plot.StepsToReproduce)
 		break
+	default:
+		fmt.Fprintln(os.Stderr, "plot type not available; command usage:")
+		flag.Usage()
+		os.Exit(1)
 	}
 	var wg sync.WaitGroup
 	for _, f := range funcs {
