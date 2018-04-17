@@ -35,8 +35,10 @@ func CommentsComplexity(tickets ...jira.Ticket) error {
 	var comms []float64
 	var times []float64
 	for _, ticket := range tickets {
-		comms = append(comms, float64(ticket.CommentWordsCount))
-		times = append(times, ticket.TimeToClose)
+		if ticket.TimeToClose > 0 && ticket.CommentWordsCount > 0 {
+			comms = append(comms, float64(ticket.CommentWordsCount))
+			times = append(times, ticket.TimeToClose)
+		}
 	}
 	wd, err := os.Getwd()
 	if err != nil {
@@ -48,7 +50,20 @@ func CommentsComplexity(tickets ...jira.Ticket) error {
 
 // FieldsComplexity produces a scatter plot with trendline for fields (i.e. summary and description) complexity analysis.
 func FieldsComplexity(tickets ...jira.Ticket) error {
-	return nil
+	var fields []float64
+	var times []float64
+	for _, ticket := range tickets {
+		if ticket.TimeToClose > 0 && ticket.SummaryDescWordsCount > 0 {
+			fields = append(fields, float64(ticket.SummaryDescWordsCount))
+			times = append(times, ticket.TimeToClose)
+		}
+	}
+	wd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+	filePath := fmt.Sprintf("%s/%s/%s", wd, graphsPath, "fields_complexity.png")
+	return scatter("Time-To-Close", "Fields Complexity", "Fields Complexity Analysis", filePath, fields, times)
 }
 
 // GrammarCorrectness produces a scatter plot with trendline for grammar correctness scores analysis.
@@ -75,17 +90,13 @@ func scatter(xAxis, yAxis, title, filepath string, xs []float64, ys []float64) e
 			Name:  yAxis,
 			Style: chart.Style{Show: true},
 		},
-		Background: chart.Style{
-			Padding: chart.Box{
-				Top:  20,
-				Left: 20,
-			},
-		},
 		Title: title,
 		Series: []chart.Series{
 			chart.ContinuousSeries{
 				Style: chart.Style{
 					Show:             true,
+					StrokeWidth:      chart.Disabled,
+					DotWidth:         5,
 					DotColorProvider: viridisByY,
 				},
 				XValues: xs,
