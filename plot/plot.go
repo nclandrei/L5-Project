@@ -2,14 +2,22 @@ package plot
 
 import (
 	"fmt"
+	"github.com/nclandrei/ticketguru/analyze"
 	"github.com/nclandrei/ticketguru/jira"
 	"github.com/wcharczuk/go-chart"
 	"github.com/wcharczuk/go-chart/drawing"
 	"os"
 )
 
-const (
-	graphsPath = "resources/graphs"
+var (
+	graphsPath  = "resources/graphs"
+	graphColors = []string{
+		"Blue",
+		"Red",
+		"Orange",
+		"Green",
+		"Gray",
+	}
 )
 
 // Plot defines a standard analysis plotting function.
@@ -22,12 +30,44 @@ func Attachments(tickets ...jira.Ticket) error {
 
 // StepsToReproduce produces a barchart for presence of steps to reproduce in tickets.
 func StepsToReproduce(tickets ...jira.Ticket) error {
-	return nil
+	var withCount int
+	var withSum, withoutSum float64
+	for _, ticket := range tickets {
+		if !analyze.IsTicketHighPriority(ticket) || ticket.TimeToClose <= 0 {
+			continue
+		}
+		if ticket.HasStepsToReproduce {
+			withCount++
+			withSum += ticket.TimeToClose
+		} else {
+			withoutSum += ticket.TimeToClose
+		}
+	}
+	return barchart("Steps To Reproduce Analysis", "steps_to_reproduce.png", map[float64]string{
+		withSum / float64(withCount):                 "With Steps to Reproduce",
+		withoutSum / float64(len(tickets)-withCount): "Without Steps to Reproduce",
+	})
 }
 
 // Stacktraces produces a barchart for presence of stacktraces in tickets.
 func Stacktraces(tickets ...jira.Ticket) error {
-	return nil
+	var withCount int
+	var withSum, withoutSum float64
+	for _, ticket := range tickets {
+		if !analyze.IsTicketHighPriority(ticket) || ticket.TimeToClose <= 0 {
+			continue
+		}
+		if ticket.HasStackTrace {
+			withCount++
+			withSum += ticket.TimeToClose
+		} else {
+			withoutSum += ticket.TimeToClose
+		}
+	}
+	return barchart("Stack Traces Analysis", "stack_traces.png", map[float64]string{
+		withSum / float64(withCount):                 "With Stack Traces",
+		withoutSum / float64(len(tickets)-withCount): "Without Stack Traces",
+	})
 }
 
 // CommentsComplexity produces a scatter plot with trendline for comments complexity analysis.
@@ -35,7 +75,7 @@ func CommentsComplexity(tickets ...jira.Ticket) error {
 	var comms []float64
 	var times []float64
 	for _, ticket := range tickets {
-		if ticket.TimeToClose > 0 && ticket.CommentWordsCount > 0 {
+		if analyze.IsTicketHighPriority(ticket) && ticket.TimeToClose > 0 && ticket.CommentWordsCount > 0 {
 			comms = append(comms, float64(ticket.CommentWordsCount))
 			times = append(times, ticket.TimeToClose)
 		}
@@ -53,7 +93,7 @@ func FieldsComplexity(tickets ...jira.Ticket) error {
 	var fields []float64
 	var times []float64
 	for _, ticket := range tickets {
-		if ticket.TimeToClose > 0 && ticket.SummaryDescWordsCount > 0 {
+		if analyze.IsTicketHighPriority(ticket) && ticket.TimeToClose > 0 && ticket.SummaryDescWordsCount > 0 {
 			fields = append(fields, float64(ticket.SummaryDescWordsCount))
 			times = append(times, ticket.TimeToClose)
 		}
@@ -68,12 +108,76 @@ func FieldsComplexity(tickets ...jira.Ticket) error {
 
 // GrammarCorrectness produces a scatter plot with trendline for grammar correctness scores analysis.
 func GrammarCorrectness(tickets ...jira.Ticket) error {
-	return nil
+	var scores []float64
+	var times []float64
+	for _, ticket := range tickets {
+		if analyze.IsTicketHighPriority(ticket) && ticket.TimeToClose > 0 && ticket.GrammarCorrectness.HasScore {
+			scores = append(scores, float64(ticket.GrammarCorrectness.Score))
+			times = append(times, ticket.TimeToClose)
+		}
+	}
+	wd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+	filePath := fmt.Sprintf("%s/%s/%s", wd, graphsPath, "grammar_correctness.png")
+	return scatter("Time-To-Close", "Grammar Correctness Score", "Grammar Correctness Analysis", filePath, scores, times)
 }
 
 // SentimentAnalysis produces a scatter plot with trendline for sentiment scores analysis.
 func SentimentAnalysis(tickets ...jira.Ticket) error {
-	return nil
+	var scores []float64
+	var times []float64
+	for _, ticket := range tickets {
+		if analyze.IsTicketHighPriority(ticket) && ticket.TimeToClose > 0 && ticket.Sentiment.HasScore {
+			scores = append(scores, ticket.Sentiment.Score)
+			times = append(times, ticket.TimeToClose)
+		}
+	}
+	wd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+	filePath := fmt.Sprintf("%s/%s/%s", wd, graphsPath, "sentiment_analysis.png")
+	return scatter("Time-To-Close", "Sentiment Score", "Sentiment Analysis", filePath, scores, times)
+}
+
+// barchart computes and saves a barchart given a variadic number of bars.
+func barchart(title, filepath string, vals map[float64]string) error {
+	var bars []chart.Value
+	for k, v := range vals {
+		bars = append(bars, chart.Value{
+			Value: k,
+			Label: v,
+		})
+	}
+	sbc := chart.BarChart{
+		Title:      title,
+		TitleStyle: chart.StyleShow(),
+		Background: chart.Style{
+			Padding: chart.Box{
+				Top: 40,
+			},
+		},
+		Height:   512,
+		BarWidth: 60,
+		XAxis: chart.Style{
+			Show: true,
+		},
+		YAxis: chart.YAxis{
+			Style: chart.Style{
+				Show: true,
+			},
+		},
+		Bars: bars,
+	}
+
+	file, err := os.Create(filepath)
+	if err != nil {
+		return err
+	}
+
+	return sbc.Render(chart.PNG, file)
 }
 
 func scatter(xAxis, yAxis, title, filepath string, xs []float64, ys []float64) error {
