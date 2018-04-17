@@ -17,9 +17,65 @@ type Plot func(...jira.Ticket) error
 
 // Attachments draws a stacked barchart for attachments analysis.
 func Attachments(tickets ...jira.Ticket) error {
+	var vals []map[float64]string
+	aTypeMap := make(map[jira.AttachmentType]int)
+	var withCount int
+	var withAttachTime, withoutAttachTime float64
 	for _, ticket := range tickets {
-
+		if ticket.TimeToClose <= 0 ||
+			ticket.TimeToClose > 27000 {
+			continue
+		}
+		if len(ticket.Fields.Attachments) == 0 {
+			withoutAttachTime += ticket.TimeToClose
+			continue
+		}
+		withAttachTime += ticket.TimeToClose
+		withCount++
+		for _, a := range ticket.Fields.Attachments {
+			aTypeMap[a.Type]++
+		}
 	}
+	withAttachTime = withAttachTime / float64(withCount)
+	withoutAttachTime = withoutAttachTime / float64(len(tickets)-withCount)
+	vals = append(vals, map[float64]string{
+		withoutAttachTime: "Without Attachments",
+	})
+	m := make(map[float64]string)
+	for k, v := range aTypeMap {
+		var score float64
+		switch k {
+		case jira.CodeAttachment:
+			score = float64(v) / withAttachTime * 100
+			m[score] = "Code"
+			break
+		case jira.ArchiveAttachment:
+			score = float64(v) / withAttachTime * 100
+			m[score] = "Archive"
+			break
+		case jira.ImageAttachment:
+			score = float64(v) / withAttachTime * 100
+			m[score] = "Screenshot"
+			break
+		case jira.ConfigAttachment:
+			score = float64(v) / withAttachTime * 100
+			m[score] = "Config"
+			break
+		case jira.TextAttachment:
+			score = float64(v) / withAttachTime * 100
+			m[score] = "Text"
+			break
+		case jira.SpreadsheetAttachment:
+			score = float64(v) / withAttachTime * 100
+			m[score] = "Spreadsheet"
+			break
+		default:
+			score = float64(v) / withAttachTime * 100
+			m[score] = "Other"
+			break
+		}
+	}
+	vals = append(vals, m)
 	wd, err := os.Getwd()
 	if err != nil {
 		return err
@@ -28,7 +84,7 @@ func Attachments(tickets ...jira.Ticket) error {
 		"Presence and type of attachments analysis",
 		fmt.Sprintf("%s/%s/%s", wd, graphsPath, "attachments.png"),
 		[]string{"With Attachments", "Without Attachments"},
-		vals,
+		vals...,
 	)
 }
 
