@@ -1,88 +1,87 @@
 package plot
 
 import (
-	"fmt"
-
-	"gonum.org/v1/plot/plotter"
-	"gonum.org/v1/plot/plotutil"
-
-	"gonum.org/v1/gonum/floats"
-
-	"gonum.org/v1/plot"
-	"gonum.org/v1/plot/vg"
+	"github.com/nclandrei/ticketguru/jira"
+	"github.com/wcharczuk/go-chart"
 )
 
-// JiraPlotter defines the plotter we use throughout the project
-type JiraPlotter struct {
-	*plot.Plot
-	path string
+// Plot defines a standard analysis plotting function.
+type Plot func(...jira.Ticket) error
+
+// Attachments draws a stacked barchart for attachments analysis.
+func Attachments(tickets ...jira.Ticket) error {
+	return stackedBarChart("filename", 1, 2, 3)
 }
 
-// NewPlotter returns a new plot.Plotter
-func NewPlotter() (*JiraPlotter, error) {
-	p, err := plot.New()
-	return &JiraPlotter{
-		Plot: p,
-		path: "resources/graphs",
-	}, err
+// StepsToReproduce produces a barchart for presence of steps to reproduce in tickets.
+func StepsToReproduce(tickets ...jira.Ticket) error {
+	return nil
 }
 
-// DrawPlot draws a plot given labels and 2 slices for representing the X and Y axes
-func (p *JiraPlotter) DrawPlot(plotName, xLabel, yLabel string, sl1, sl2 []float64) error {
-	p.Title.Text = plotName
-	p.X.Label.Text = xLabel
-	p.Y.Label.Text = yLabel
+// Stacktraces produces a barchart for presence of stacktraces in tickets.
+func Stacktraces(tickets ...jira.Ticket) error {
+	return nil
+}
 
-	err := plotutil.AddLinePoints(p.Plot,
-		convertToPoints(sl1, sl2),
-	)
-	if err != nil {
-		return err
+// CommentsComplexity produces a scatter plot with trendline for comments complexity analysis.
+func CommentsComplexity(tickets ...jira.Ticket) error {
+	return nil
+}
+
+// FieldsComplexity produces a scatter plot with trendline for fields (i.e. summary and description) complexity analysis.
+func FieldsComplexity(tickets ...jira.Ticket) error {
+	return nil
+}
+
+// GrammarCorrectness produces a scatter plot with trendline for grammar correctness scores analysis.
+func GrammarCorrectness(tickets ...jira.Ticket) error {
+	return nil
+}
+
+// SentimentAnalysis produces a scatter plot with trendline for sentiment scores analysis.
+func SentimentAnalysis(tickets ...jira.Ticket) error {
+	return nil
+}
+
+// stackedBarChart produces a
+func stackedBarChart(filename string, vals ...int) error {
+	sbc := chart.StackedBarChart{
+		Title:      "Presence and type of attachments analysis",
+		TitleStyle: chart.StyleShow(),
+		Background: chart.Style{
+			Padding: chart.Box{
+				Top: 50,
+			},
+			Show: true,
+		},
+		Height: 512,
+		XAxis: chart.Style{
+			Show: true,
+		},
+		YAxis: chart.Style{
+			Show: true,
+		},
+		Bars: []chart.StackedBar{
+			{
+				Name: "With Attachments",
+				Values: []chart.Value{
+					{Value: 5, Label: "Blue"},
+					{Value: 5, Label: "Green"},
+					{Value: 4, Label: "Gray"},
+					{Value: 3, Label: "Orange"},
+					{Value: 3, Label: "Test"},
+				},
+			},
+			{
+				Name: "Without Attachments",
+				Values: []chart.Value{
+					{Value: 10, Label: "Blue"},
+					{Value: 5, Label: "Green"},
+					{Value: 1, Label: "Gray"},
+				},
+			},
+		},
 	}
 
-	return p.Save(8*vg.Inch, 8*vg.Inch, fmt.Sprintf("%s/%s.png", p.path, plotName))
-}
-
-// DrawAttachmentsBarchart computes a barchart given two slices of floats
-func (p *JiraPlotter) DrawAttachmentsBarchart(plotName, yLabel string, sl1, sl2 []float64) error {
-	barA := plotter.Values{floats.Sum(sl1) / float64(len(sl1))}
-	barB := plotter.Values{floats.Sum(sl2) / float64(len(sl2))}
-
-	p.Title.Text = plotName
-	p.Y.Label.Text = yLabel
-
-	w := vg.Points(20)
-	barChartA, err := plotter.NewBarChart(barA, w)
-	if err != nil {
-		return err
-	}
-	barChartA.LineStyle.Width = vg.Length(0)
-	barChartA.Color = plotutil.Color(0)
-	barChartA.Offset = -w
-
-	barChartB, err := plotter.NewBarChart(barB, w)
-	if err != nil {
-		return err
-	}
-	barChartB.LineStyle.Width = vg.Length(0)
-	barChartB.Color = plotutil.Color(1)
-
-	p.Add(barChartA, barChartB)
-	p.Legend.Add("With Attachments", barChartA)
-	p.Legend.Add("Without Attachments", barChartB)
-
-	return p.Save(8*vg.Inch, 8*vg.Inch, fmt.Sprintf("%s/%s.png", p.path, plotName))
-}
-
-func convertToPoints(sl1, sl2 []float64) plotter.XYs {
-	pts := make(plotter.XYs, len(sl1))
-	for i := range pts {
-		pts[i].X = sl1[i]
-		pts[i].Y = sl2[i]
-	}
-	return pts
-}
-
-func computeAverage(els []float64) float64 {
-	return floats.Sum(els) / float64(len(els))
+	return sbc.Render(chart.PNG, nil)
 }
