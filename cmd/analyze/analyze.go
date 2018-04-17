@@ -79,9 +79,9 @@ func main() {
 	var wg sync.WaitGroup
 	for _, f := range analysisFuncs {
 		wg.Add(1)
-		go func(f analyze.TicketAnalysis) {
+		go func(fn analyze.TicketAnalysis) {
 			defer wg.Done()
-			f(tickets...)
+			fn(tickets...)
 		}(f)
 	}
 
