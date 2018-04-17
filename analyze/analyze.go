@@ -191,7 +191,8 @@ func calculateTimeDifference(t1, t2 jira.Time) float64 {
 	return time.Time(t1).Sub(time.Time(t2)).Hours()
 }
 
-// isTicketHighPriority checks whether an ticket has priority ID either 1 or 2 (i.e. Critical or Major).
+// isTicketHighPriority checks whether a ticket is high priority.
 func isTicketHighPriority(ticket jira.Ticket) bool {
-	return ticket.Fields.Priority.ID == "1" || ticket.Fields.Priority.ID == "2"
+	return ticket.Fields.Priority.ID == "1" || ticket.Fields.Priority.ID == "2" ||
+		ticket.Fields.Priority.ID == "3" || ticket.Fields.Priority.ID == "4"
 }
