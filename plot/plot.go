@@ -9,15 +9,8 @@ import (
 	"os"
 )
 
-var (
-	graphsPath  = "resources/graphs"
-	graphColors = []string{
-		"Blue",
-		"Red",
-		"Orange",
-		"Green",
-		"Gray",
-	}
+const (
+	graphsPath = "resources/graphs"
 )
 
 // Plot defines a standard analysis plotting function.
