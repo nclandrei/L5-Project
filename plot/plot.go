@@ -105,10 +105,6 @@ func scatter(xAxis, yAxis, title, filepath string, xs []float64, ys []float64) e
 		},
 	}
 
-	s.Elements = []chart.Renderable{
-		chart.Legend(&s),
-	}
-
 	file, err := os.Create(filepath)
 	if err != nil {
 		return err
