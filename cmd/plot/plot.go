@@ -14,7 +14,8 @@ var (
 		"/Users/nclandrei/Code/go/src/github.com/nclandrei/ticketguru/users.db",
 		"path to Bolt database file",
 	)
-	pType = flag.String("type", "all", "plot(s) to draw")
+	pType = flag.String("type", "all", "plot(s) to draw - available types: grammar, sentiment, steps_to_reprodce"+
+		"stack_traces, attachments, comments_complexity, fields_complexity, all")
 )
 
 func main() {
@@ -28,6 +29,27 @@ func main() {
 	}
 	var funcs []plot.Plot
 	switch *pType {
+	case "grammar":
+		funcs = append(funcs, plot.GrammarCorrectness)
+		break
+	case "sentiment":
+		funcs = append(funcs, plot.SentimentAnalysis)
+		break
+	case "steps_to_reproduce":
+		funcs = append(funcs, plot.StepsToReproduce)
+		break
+	case "stack_traces":
+		funcs = append(funcs, plot.Stacktraces)
+		break
+	case "attachments":
+		funcs = append(funcs, plot.Attachments)
+		break
+	case "comments_complexity":
+		funcs = append(funcs, plot.CommentsComplexity)
+		break
+	case "fields_complexity":
+		funcs = append(funcs, plot.FieldsComplexity)
+		break
 	case "all":
 		funcs = append(funcs, plot.CommentsComplexity, plot.FieldsComplexity, plot.SentimentAnalysis, plot.GrammarCorrectness,
 			plot.Stacktraces, plot.StepsToReproduce)
