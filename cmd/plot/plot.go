@@ -21,14 +21,8 @@ var (
 )
 
 func main() {
-	boltDB, err := db.NewBolt(*dbPath)
-	if err != nil {
-		log.Fatalf("could not open bolt db: %v\n", err)
-	}
-	tickets, err := boltDB.Tickets()
-	if err != nil {
-		log.Fatalf("could not get tickets from bolt db: %v\n", err)
-	}
+	flag.Parse()
+
 	var funcs []plot.Plot
 	switch *pType {
 	case "grammar":
@@ -57,10 +51,20 @@ func main() {
 			plot.Stacktraces, plot.StepsToReproduce)
 		break
 	default:
-		fmt.Fprintln(os.Stderr, "plot type not available; command usage:")
+		fmt.Fprintln(os.Stderr, "plot type not available")
 		flag.Usage()
 		os.Exit(1)
 	}
+
+	boltDB, err := db.NewBolt(*dbPath)
+	if err != nil {
+		log.Fatalf("could not open bolt db: %v\n", err)
+	}
+	tickets, err := boltDB.Tickets()
+	if err != nil {
+		log.Fatalf("could not get tickets from bolt db: %v\n", err)
+	}
+
 	var wg sync.WaitGroup
 	for _, f := range funcs {
 		wg.Add(1)
