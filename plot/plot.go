@@ -17,7 +17,7 @@ type Plot func(...jira.Ticket) error
 
 // Attachments draws a stacked barchart for attachments analysis.
 func Attachments(tickets ...jira.Ticket) error {
-	var result map[string]float64
+	result := make(map[string]float64)
 	var withoutCount int
 	var withoutTime float64
 	typeCountM := make(map[jira.AttachmentType]int)
