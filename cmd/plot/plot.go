@@ -29,7 +29,8 @@ func main() {
 	var funcs []plot.Plot
 	switch *pType {
 	case "all":
-		funcs = append(funcs, plot.CommentsComplexity, plot.FieldsComplexity)
+		funcs = append(funcs, plot.CommentsComplexity, plot.FieldsComplexity, plot.SentimentAnalysis, plot.GrammarCorrectness,
+			plot.Stacktraces, plot.StepsToReproduce)
 		break
 	}
 	var wg sync.WaitGroup
