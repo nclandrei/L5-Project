@@ -85,7 +85,7 @@ func main() {
 		}(f)
 	}
 
-	wg.Done()
+	wg.Wait()
 
 	err = boltDB.Insert(tickets...)
 	if err != nil {
