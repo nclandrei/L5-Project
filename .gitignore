@@ -12,6 +12,7 @@ users.db
 main
 storer
 analyzer
+plotter
 
 # Test binary, build with `go test -c`
 *.test
