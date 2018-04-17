@@ -17,74 +17,68 @@ type Plot func(...jira.Ticket) error
 
 // Attachments draws a stacked barchart for attachments analysis.
 func Attachments(tickets ...jira.Ticket) error {
-	var vals []map[float64]string
-	aTypeMap := make(map[jira.AttachmentType]int)
-	var withCount int
-	var withAttachTime, withoutAttachTime float64
+	var result map[string]float64
+	var withoutCount int
+	var withoutTime float64
+	typeCountM := make(map[jira.AttachmentType]int)
+	typeTimeM := make(map[jira.AttachmentType]float64)
 	for _, ticket := range tickets {
 		if ticket.TimeToClose <= 0 ||
 			ticket.TimeToClose > 27000 {
 			continue
 		}
 		if len(ticket.Fields.Attachments) == 0 {
-			withoutAttachTime += ticket.TimeToClose
+			withoutCount++
+			withoutTime += ticket.TimeToClose
 			continue
 		}
-		withAttachTime += ticket.TimeToClose
-		withCount++
 		for _, a := range ticket.Fields.Attachments {
-			aTypeMap[a.Type]++
+			typeCountM[a.Type]++
+			typeTimeM[a.Type] += ticket.TimeToClose
 		}
 	}
-	withAttachTime = withAttachTime / float64(withCount)
-	withoutAttachTime = withoutAttachTime / float64(len(tickets)-withCount)
-	vals = append(vals, map[float64]string{
-		withoutAttachTime: "Without Attachments",
-	})
-	m := make(map[float64]string)
-	for k, v := range aTypeMap {
+	result["Without Attachments"] = withoutTime / float64(withoutCount)
+	for k, v := range typeCountM {
 		var score float64
 		switch k {
 		case jira.CodeAttachment:
-			score = float64(v) / withAttachTime * 100
-			m[score] = "Code"
+			score = typeTimeM[k] / float64(v)
+			result["Code"] = score
 			break
 		case jira.ArchiveAttachment:
-			score = float64(v) / withAttachTime * 100
-			m[score] = "Archive"
+			score = typeTimeM[k] / float64(v)
+			result["Archive"] = score
 			break
 		case jira.ImageAttachment:
-			score = float64(v) / withAttachTime * 100
-			m[score] = "Screenshot"
+			score = typeTimeM[k] / float64(v)
+			result["Image"] = score
 			break
 		case jira.ConfigAttachment:
-			score = float64(v) / withAttachTime * 100
-			m[score] = "Config"
+			score = typeTimeM[k] / float64(v)
+			result["Config"] = score
 			break
 		case jira.TextAttachment:
-			score = float64(v) / withAttachTime * 100
-			m[score] = "Text"
+			score = typeTimeM[k] / float64(v)
+			result["Text"] = score
 			break
 		case jira.SpreadsheetAttachment:
-			score = float64(v) / withAttachTime * 100
-			m[score] = "Spreadsheet"
+			score = typeTimeM[k] / float64(v)
+			result["Spreadsheet"] = score
 			break
 		default:
-			score = float64(v) / withAttachTime * 100
-			m[score] = "Other"
+			score = typeTimeM[k] / float64(v)
+			result["Other"] = score
 			break
 		}
 	}
-	vals = append(vals, m)
 	wd, err := os.Getwd()
 	if err != nil {
 		return err
 	}
-	return stackedBarChart(
+	return barchart(
 		"Presence and type of attachments analysis",
 		fmt.Sprintf("%s/%s/%s", wd, graphsPath, "attachments.png"),
-		[]string{"With Attachments", "Without Attachments"},
-		vals...,
+		result,
 	)
 }
 
@@ -111,9 +105,9 @@ func StepsToReproduce(tickets ...jira.Ticket) error {
 	return barchart(
 		"Steps To Reproduce Analysis",
 		fmt.Sprintf("%s/%s/%s", wd, graphsPath, "steps_to_reproduce.png"),
-		map[float64]string{
-			withSum / float64(withCount):                 "With Steps to Reproduce",
-			withoutSum / float64(len(tickets)-withCount): "Without Steps to Reproduce",
+		map[string]float64{
+			"With Steps to Reproduce":    withSum / float64(withCount),
+			"Without Steps to Reproduce": withoutSum / float64(len(tickets)-withCount),
 		},
 	)
 }
@@ -141,9 +135,9 @@ func Stacktraces(tickets ...jira.Ticket) error {
 	return barchart(
 		"Stack Traces Analysis",
 		fmt.Sprintf("%s/%s/%s", wd, graphsPath, "stack_traces.png"),
-		map[float64]string{
-			withSum / float64(withCount):                 "With Stack Traces",
-			withoutSum / float64(len(tickets)-withCount): "Without Stack Traces",
+		map[string]float64{
+			"With Stack Traces":    withSum / float64(withCount),
+			"Without Stack Traces": withoutSum / float64(len(tickets)-withCount),
 		},
 	)
 }
@@ -261,12 +255,12 @@ func SentimentAnalysis(tickets ...jira.Ticket) error {
 }
 
 // barchart computes and saves a barchart given a variadic number of bars.
-func barchart(title, filepath string, vals map[float64]string) error {
+func barchart(title, filepath string, vals map[string]float64) error {
 	var bars []chart.Value
 	for k, v := range vals {
 		bars = append(bars, chart.Value{
-			Value: k,
-			Label: v,
+			Label: k,
+			Value: v,
 		})
 	}
 	sbc := chart.BarChart{
@@ -347,47 +341,4 @@ func scatter(xAxis, yAxis, title, filepath string, xs []float64, ys []float64) e
 	}
 
 	return s.Render(chart.PNG, file)
-}
-
-// stackedBarChart produces a stacked barchart (used only for attachments at the moment).
-func stackedBarChart(title, filepath string, barNames []string, vals ...map[float64]string) error {
-	var stackedBars []chart.StackedBar
-	for i := range vals {
-		var bars []chart.Value
-		for k, v := range vals[i] {
-			bars = append(bars, chart.Value{
-				Value: k,
-				Label: v,
-			})
-		}
-		stackedBars = append(stackedBars, chart.StackedBar{
-			Name:   barNames[i],
-			Values: bars,
-		})
-	}
-	sbc := chart.StackedBarChart{
-		Title:      title,
-		TitleStyle: chart.StyleShow(),
-		Background: chart.Style{
-			Padding: chart.Box{
-				Top: 50,
-			},
-			Show: true,
-		},
-		Height: 512,
-		XAxis: chart.Style{
-			Show: true,
-		},
-		YAxis: chart.Style{
-			Show: true,
-		},
-		Bars: stackedBars,
-	}
-
-	file, err := os.Create(filepath)
-	if err != nil {
-		return err
-	}
-
-	return sbc.Render(chart.PNG, file)
 }
