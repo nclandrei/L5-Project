@@ -2,12 +2,6 @@
 
 
 [[projects]]
-  branch = "default"
-  name = "bitbucket.org/zombiezen/gopdf"
-  packages = ["pdf"]
-  revision = "1c63dc69751bc45441c2ce1f56b631c55294b4d5"
-
-[[projects]]
   name = "cloud.google.com/go"
   packages = [
     "compute/metadata",
@@ -16,12 +10,6 @@
   ]
   revision = "20d4028b8a750c2aca76bf9fefa8ed2d0109b573"
   version = "v0.19.0"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/ajstarks/svgo"
-  packages = ["."]
-  revision = "644b8db467afccf19a0692a3e31a1868e4287ab8"
 
 [[projects]]
   name = "github.com/boltdb/bolt"
@@ -33,7 +21,6 @@
   branch = "master"
   name = "github.com/golang/freetype"
   packages = [
-    ".",
     "raster",
     "truetype"
   ]
@@ -65,14 +52,17 @@
   version = "v1.2.0"
 
 [[projects]]
-  branch = "master"
-  name = "github.com/llgcode/draw2d"
+  name = "github.com/wcharczuk/go-chart"
   packages = [
     ".",
-    "draw2dbase",
-    "draw2dimg"
+    "drawing",
+    "matrix",
+    "roboto",
+    "seq",
+    "util"
   ]
-  revision = "274031cf2abe8acd15c4a911e1f7f1295fc4830c"
+  revision = "7c3982fe3d8ab0c9eea9ab5d2aced51e45d447bc"
+  version = "v2.0.1"
 
 [[projects]]
   name = "go.opencensus.io"
@@ -100,9 +90,7 @@
     "draw",
     "font",
     "math/f64",
-    "math/fixed",
-    "tiff",
-    "tiff/lzw"
+    "math/fixed"
   ]
   revision = "12117c17ca67ffa1ce22e9409f3b0b0a93ac08c7"
 
@@ -159,44 +147,6 @@
   ]
   revision = "f21a4dfb5e38f5895301dc265a8def02365cc3d0"
   version = "v0.3.0"
-
-[[projects]]
-  branch = "master"
-  name = "gonum.org/v1/gonum"
-  packages = [
-    "blas",
-    "blas/blas64",
-    "blas/gonum",
-    "floats",
-    "internal/asm/c128",
-    "internal/asm/f32",
-    "internal/asm/f64",
-    "internal/math32",
-    "lapack",
-    "lapack/gonum",
-    "lapack/lapack64",
-    "mat"
-  ]
-  revision = "052ff404ed7bcbcf5c326f45dd2e8021cef6af9f"
-
-[[projects]]
-  branch = "master"
-  name = "gonum.org/v1/plot"
-  packages = [
-    ".",
-    "palette",
-    "plotter",
-    "plotutil",
-    "tools/bezier",
-    "vg",
-    "vg/draw",
-    "vg/fonts",
-    "vg/vgeps",
-    "vg/vgimg",
-    "vg/vgpdf",
-    "vg/vgsvg"
-  ]
-  revision = "d96009811a2494d1beceab94c0383fed3d08453f"
 
 [[projects]]
   branch = "master"
@@ -274,6 +224,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "ba6b94fa5110d360994442e5aa92d8eb8ceb6819367c65b61cdd22aad26a3322"
+  inputs-digest = "6045024687086a2ff4de6735932a71f5e97611f20af167dfbe4e25cce41fd062"
   solver-name = "gps-cdcl"
   solver-version = 1

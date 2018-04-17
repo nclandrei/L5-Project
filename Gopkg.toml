@@ -4,10 +4,6 @@
 
 [[constraint]]
   branch = "master"
-  name = "gonum.org/v1/plot"
-
-[[constraint]]
-  branch = "master"
   name = "google.golang.org/genproto"
 
 [prune]
