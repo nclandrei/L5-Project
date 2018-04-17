@@ -33,7 +33,9 @@ func StepsToReproduce(tickets ...jira.Ticket) error {
 	var withCount int
 	var withSum, withoutSum float64
 	for _, ticket := range tickets {
-		if !analyze.IsTicketHighPriority(ticket) || ticket.TimeToClose <= 0 {
+		if !analyze.IsTicketHighPriority(ticket) ||
+			ticket.TimeToClose <= 0 ||
+			ticket.TimeToClose > 9000 {
 			continue
 		}
 		if ticket.HasStepsToReproduce {
@@ -43,10 +45,17 @@ func StepsToReproduce(tickets ...jira.Ticket) error {
 			withoutSum += ticket.TimeToClose
 		}
 	}
-	return barchart("Steps To Reproduce Analysis", "steps_to_reproduce.png", map[float64]string{
-		withSum / float64(withCount):                 "With Steps to Reproduce",
-		withoutSum / float64(len(tickets)-withCount): "Without Steps to Reproduce",
-	})
+	wd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+	return barchart("Steps To Reproduce Analysis",
+		fmt.Sprintf("%s/%s/%s", wd, graphsPath, "steps_to_reproduce.png"),
+		map[float64]string{
+			withSum / float64(withCount):                 "With Steps to Reproduce",
+			withoutSum / float64(len(tickets)-withCount): "Without Steps to Reproduce",
+		},
+	)
 }
 
 // Stacktraces produces a barchart for presence of stacktraces in tickets.
@@ -54,7 +63,9 @@ func Stacktraces(tickets ...jira.Ticket) error {
 	var withCount int
 	var withSum, withoutSum float64
 	for _, ticket := range tickets {
-		if !analyze.IsTicketHighPriority(ticket) || ticket.TimeToClose <= 0 {
+		if !analyze.IsTicketHighPriority(ticket) ||
+			ticket.TimeToClose <= 0 ||
+			ticket.TimeToClose > 9000 {
 			continue
 		}
 		if ticket.HasStackTrace {
@@ -64,10 +75,17 @@ func Stacktraces(tickets ...jira.Ticket) error {
 			withoutSum += ticket.TimeToClose
 		}
 	}
-	return barchart("Stack Traces Analysis", "stack_traces.png", map[float64]string{
-		withSum / float64(withCount):                 "With Stack Traces",
-		withoutSum / float64(len(tickets)-withCount): "Without Stack Traces",
-	})
+	wd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+	return barchart("Stack Traces Analysis",
+		fmt.Sprintf("%s/%s/%s", wd, graphsPath, "stack_traces.png"),
+		map[float64]string{
+			withSum / float64(withCount):                 "With Stack Traces",
+			withoutSum / float64(len(tickets)-withCount): "Without Stack Traces",
+		},
+	)
 }
 
 // CommentsComplexity produces a scatter plot with trendline for comments complexity analysis.
@@ -75,7 +93,10 @@ func CommentsComplexity(tickets ...jira.Ticket) error {
 	var comms []float64
 	var times []float64
 	for _, ticket := range tickets {
-		if analyze.IsTicketHighPriority(ticket) && ticket.TimeToClose > 0 && ticket.CommentWordsCount > 0 {
+		if analyze.IsTicketHighPriority(ticket) &&
+			ticket.TimeToClose > 0 &&
+			ticket.TimeToClose < 9000 &&
+			ticket.CommentWordsCount > 0 {
 			comms = append(comms, float64(ticket.CommentWordsCount))
 			times = append(times, ticket.TimeToClose)
 		}
@@ -93,7 +114,10 @@ func FieldsComplexity(tickets ...jira.Ticket) error {
 	var fields []float64
 	var times []float64
 	for _, ticket := range tickets {
-		if analyze.IsTicketHighPriority(ticket) && ticket.TimeToClose > 0 && ticket.SummaryDescWordsCount > 0 {
+		if analyze.IsTicketHighPriority(ticket) &&
+			ticket.TimeToClose > 0 &&
+			ticket.TimeToClose <= 9000 &&
+			ticket.SummaryDescWordsCount > 0 {
 			fields = append(fields, float64(ticket.SummaryDescWordsCount))
 			times = append(times, ticket.TimeToClose)
 		}
@@ -111,7 +135,10 @@ func GrammarCorrectness(tickets ...jira.Ticket) error {
 	var scores []float64
 	var times []float64
 	for _, ticket := range tickets {
-		if analyze.IsTicketHighPriority(ticket) && ticket.TimeToClose > 0 && ticket.GrammarCorrectness.HasScore {
+		if analyze.IsTicketHighPriority(ticket) &&
+			ticket.TimeToClose > 0 &&
+			ticket.TimeToClose <= 9000 &&
+			ticket.GrammarCorrectness.HasScore {
 			scores = append(scores, float64(ticket.GrammarCorrectness.Score))
 			times = append(times, ticket.TimeToClose)
 		}
@@ -129,7 +156,10 @@ func SentimentAnalysis(tickets ...jira.Ticket) error {
 	var scores []float64
 	var times []float64
 	for _, ticket := range tickets {
-		if analyze.IsTicketHighPriority(ticket) && ticket.TimeToClose > 0 && ticket.Sentiment.HasScore {
+		if analyze.IsTicketHighPriority(ticket) &&
+			ticket.TimeToClose > 0 &&
+			ticket.TimeToClose <= 9000 &&
+			ticket.Sentiment.HasScore {
 			scores = append(scores, ticket.Sentiment.Score)
 			times = append(times, ticket.TimeToClose)
 		}
@@ -165,6 +195,10 @@ func barchart(title, filepath string, vals map[float64]string) error {
 			Show: true,
 		},
 		YAxis: chart.YAxis{
+			Name: "Time-To-Close",
+			NameStyle: chart.Style{
+				Show: true,
+			},
 			Style: chart.Style{
 				Show: true,
 			},
@@ -187,14 +221,19 @@ func scatter(xAxis, yAxis, title, filepath string, xs []float64, ys []float64) e
 
 	s := chart.Chart{
 		XAxis: chart.XAxis{
-			Name:  xAxis,
-			Style: chart.Style{Show: true},
+			Name:      xAxis,
+			NameStyle: chart.Style{Show: true},
+			Style:     chart.Style{Show: true},
 		},
 		YAxis: chart.YAxis{
-			Name:  yAxis,
-			Style: chart.Style{Show: true},
+			Name:      yAxis,
+			NameStyle: chart.Style{Show: true},
+			Style:     chart.Style{Show: true},
 		},
 		Title: title,
+		TitleStyle: chart.Style{
+			Show: true,
+		},
 		Series: []chart.Series{
 			chart.ContinuousSeries{
 				Style: chart.Style{
