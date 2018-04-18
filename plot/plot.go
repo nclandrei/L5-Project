@@ -25,7 +25,7 @@ func Attachments(tickets ...jira.Ticket) error {
 	for _, ticket := range tickets {
 		highPriority := jira.IsHighPriority(ticket)
 		if ticket.TimeToClose <= 0 ||
-			ticket.TimeToClose > 27000 ||
+			ticket.TimeToClose > jira.MaxTimeToCloseH ||
 			!highPriority {
 			continue
 		}
@@ -92,7 +92,7 @@ func StepsToReproduce(tickets ...jira.Ticket) error {
 	for _, ticket := range tickets {
 		highPriority := jira.IsHighPriority(ticket)
 		if ticket.TimeToClose <= 0 ||
-			ticket.TimeToClose > 27000 ||
+			ticket.TimeToClose > jira.MaxTimeToCloseH ||
 			!highPriority {
 			continue
 		}
@@ -125,7 +125,7 @@ func Stacktraces(tickets ...jira.Ticket) error {
 	for _, ticket := range tickets {
 		highPriority := jira.IsHighPriority(ticket)
 		if ticket.TimeToClose <= 0 ||
-			ticket.TimeToClose > 27000 ||
+			ticket.TimeToClose > jira.MaxTimeToCloseH ||
 			!highPriority {
 			continue
 		}
@@ -159,9 +159,9 @@ func CommentsComplexity(tickets ...jira.Ticket) error {
 		highPriority := jira.IsHighPriority(ticket)
 		if highPriority &&
 			ticket.TimeToClose > 0 &&
-			ticket.TimeToClose < 27000 &&
+			ticket.TimeToClose < jira.MaxTimeToCloseH &&
 			ticket.CommentWordsCount > 0 &&
-			ticket.CommentWordsCount < 25000 {
+			ticket.CommentWordsCount < jira.MaxCommWordCount {
 			comms = append(comms, float64(ticket.CommentWordsCount))
 			times = append(times, ticket.TimeToClose)
 		}
@@ -188,9 +188,9 @@ func FieldsComplexity(tickets ...jira.Ticket) error {
 		highPriority := jira.IsHighPriority(ticket)
 		if highPriority &&
 			ticket.TimeToClose > 0 &&
-			ticket.TimeToClose <= 27000 &&
+			ticket.TimeToClose <= jira.MaxTimeToCloseH &&
 			ticket.SummaryDescWordsCount > 0 &&
-			ticket.SummaryDescWordsCount < 5000 {
+			ticket.SummaryDescWordsCount < jira.MaxSummaryDescWordCount {
 			fields = append(fields, float64(ticket.SummaryDescWordsCount))
 			times = append(times, ticket.TimeToClose)
 		}
@@ -218,9 +218,9 @@ func GrammarCorrectness(tickets ...jira.Ticket) error {
 		highPriority := jira.IsHighPriority(ticket)
 		if highPriority &&
 			ticket.TimeToClose > 0 &&
-			ticket.TimeToClose <= 27000 &&
+			ticket.TimeToClose <= jira.MaxTimeToCloseH &&
 			ticket.GrammarCorrectness.HasScore &&
-			ticket.GrammarCorrectness.Score < 115 {
+			ticket.GrammarCorrectness.Score < jira.MaxGrammarErrCount {
 			scores = append(scores, float64(ticket.GrammarCorrectness.Score))
 			times = append(times, ticket.TimeToClose)
 		}
@@ -248,7 +248,7 @@ func SentimentAnalysis(tickets ...jira.Ticket) error {
 		highPriority := jira.IsHighPriority(ticket)
 		if highPriority &&
 			ticket.TimeToClose > 0 &&
-			ticket.TimeToClose <= 27000 &&
+			ticket.TimeToClose <= jira.MaxTimeToCloseH &&
 			ticket.Sentiment.HasScore {
 			scores = append(scores, ticket.Sentiment.Score)
 			times = append(times, ticket.TimeToClose)

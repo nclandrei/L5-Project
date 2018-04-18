@@ -59,7 +59,7 @@ func Attachments(tickets ...jira.Ticket) (*TTestResult, error) {
 	for _, t := range tickets {
 		highPriority := jira.IsHighPriority(t)
 		if t.TimeToClose <= 0 ||
-			t.TimeToClose > 27000 ||
+			t.TimeToClose > jira.MaxTimeToCloseH ||
 			!highPriority {
 			continue
 		}
@@ -79,7 +79,7 @@ func StepsToReproduce(tickets ...jira.Ticket) (*TTestResult, error) {
 	for _, t := range tickets {
 		highPriority := jira.IsHighPriority(t)
 		if t.TimeToClose <= 0 ||
-			t.TimeToClose > 27000 ||
+			t.TimeToClose > jira.MaxTimeToCloseH ||
 			!highPriority {
 			continue
 		}
@@ -99,7 +99,7 @@ func Stacktraces(tickets ...jira.Ticket) (*TTestResult, error) {
 	for _, t := range tickets {
 		highPriority := jira.IsHighPriority(t)
 		if t.TimeToClose <= 0 ||
-			t.TimeToClose > 27000 ||
+			t.TimeToClose > jira.MaxTimeToCloseH ||
 			!highPriority {
 			continue
 		}
@@ -120,9 +120,9 @@ func CommentsComplexity(tickets ...jira.Ticket) *SpearmanResult {
 		highPriority := jira.IsHighPriority(t)
 		if highPriority &&
 			t.TimeToClose > 0 &&
-			t.TimeToClose < 27000 &&
+			t.TimeToClose < jira.MaxTimeToCloseH &&
 			t.CommentWordsCount > 0 &&
-			t.CommentWordsCount < 2500 {
+			t.CommentWordsCount < jira.MaxCommWordCount {
 			comms = append(comms, float64(t.CommentWordsCount))
 			times = append(times, t.TimeToClose)
 		}
@@ -138,9 +138,9 @@ func FieldsComplexity(tickets ...jira.Ticket) *SpearmanResult {
 		highPriority := jira.IsHighPriority(t)
 		if highPriority &&
 			t.TimeToClose > 0 &&
-			t.TimeToClose <= 27000 &&
+			t.TimeToClose <= jira.MaxTimeToCloseH &&
 			t.SummaryDescWordsCount > 0 &&
-			t.SummaryDescWordsCount < 5000 {
+			t.SummaryDescWordsCount < jira.MaxSummaryDescWordCount {
 			fields = append(fields, float64(t.SummaryDescWordsCount))
 			times = append(times, t.TimeToClose)
 		}
@@ -156,9 +156,8 @@ func Sentiment(tickets ...jira.Ticket) *SpearmanResult {
 		highPriority := jira.IsHighPriority(t)
 		if highPriority &&
 			t.TimeToClose > 0 &&
-			t.TimeToClose <= 27000 &&
-			t.GrammarCorrectness.HasScore &&
-			t.GrammarCorrectness.Score < 115 {
+			t.TimeToClose <= jira.MaxTimeToCloseH &&
+			t.Sentiment.HasScore {
 			scores = append(scores, t.Sentiment.Score)
 			times = append(times, t.TimeToClose)
 		}
@@ -174,9 +173,9 @@ func Grammar(tickets ...jira.Ticket) *SpearmanResult {
 		highPriority := jira.IsHighPriority(t)
 		if highPriority &&
 			t.TimeToClose > 0 &&
-			t.TimeToClose <= 27000 &&
+			t.TimeToClose <= jira.MaxTimeToCloseH &&
 			t.GrammarCorrectness.HasScore &&
-			t.GrammarCorrectness.Score < 115 {
+			t.GrammarCorrectness.Score < jira.MaxGrammarErrCount {
 			scores = append(scores, float64(t.GrammarCorrectness.Score))
 			times = append(times, t.TimeToClose)
 		}
