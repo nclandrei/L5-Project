@@ -7,11 +7,6 @@ import (
 	"math"
 )
 
-var (
-	errSampleSize   = errors.New("sample is too small")
-	errZeroVariance = errors.New("sample has zero variance")
-)
-
 // Stats defines the basic slice of float64 used for statistical tests.
 type stats []float64
 
@@ -196,11 +191,11 @@ func twoSampleSpearmanRTest(xs, ys stats) *SpearmanResult {
 func twoSampleWelchTTest(x1, x2 Sample) (*TTestResult, error) {
 	n1, n2 := x1.Weight(), x2.Weight()
 	if n1 <= 1 || n2 <= 1 {
-		return nil, errSampleSize
+		return nil, errors.New("sample is too small")
 	}
 	v1, v2 := x1.Variance(), x2.Variance()
 	if v1 == 0 && v2 == 0 {
-		return nil, errZeroVariance
+		return nil, errors.New("sample has zero variance")
 	}
 
 	dof := math.Pow(v1/n1+v2/n2, 2) /
