@@ -15,7 +15,7 @@ type TicketAnalysis func(...jira.Ticket)
 // TimesToClose returns how much time it took to close a variadic number of tickets.
 func TimesToClose(tickets ...jira.Ticket) {
 	for i := range tickets {
-		if !isTicketHighPriority(tickets[i]) {
+		if !isTicketHighPriority(tickets[i]) || tickets[i].Fields.Status.Name == "Open" {
 			continue
 		}
 		var complete bool
@@ -32,9 +32,6 @@ func TimesToClose(tickets ...jira.Ticket) {
 			if complete {
 				break
 			}
-		}
-		if !complete {
-			tickets[i].TimeToClose = -1
 		}
 	}
 }
