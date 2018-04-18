@@ -13,20 +13,20 @@ var (
 )
 
 // Stats defines the basic slice of float64 used for statistical tests.
-type Stats []float64
+type stats []float64
 
 // Weight calculates the default weight of a Stats value.
-func (s Stats) Weight() float64 {
+func (s stats) Weight() float64 {
 	return float64(len(s))
 }
 
 // Len returns the length of the underlying slice.
-func (s Stats) Len() int {
+func (s stats) Len() int {
 	return len(s)
 }
 
 // Mean calculates the mean of the variables inside the underlying slice of a Stats value.
-func (s Stats) Mean() float64 {
+func (s stats) Mean() float64 {
 	var total float64
 	for _, n := range s {
 		total += n
@@ -35,7 +35,7 @@ func (s Stats) Mean() float64 {
 }
 
 // Variance returns the variance of the underlying slice of a Stats value.
-func (s Stats) Variance() float64 {
+func (s stats) Variance() float64 {
 	var total float64
 	mean := s.Mean()
 	for _, number := range s {
@@ -54,10 +54,13 @@ type ContinuousTest func(...jira.Ticket) *SpearmanResult
 
 // Attachments performs Welch's T Test on all tickets' attachments.
 func Attachments(tickets ...jira.Ticket) (*TTestResult, error) {
-	var withTimes Stats
-	var withoutTimes Stats
+	var withTimes stats
+	var withoutTimes stats
 	for _, t := range tickets {
-		if t.TimeToClose <= 0 {
+		highPriority := jira.IsHighPriority(t)
+		if t.TimeToClose <= 0 ||
+			t.TimeToClose > 27000 ||
+			!highPriority {
 			continue
 		}
 		if len(t.Fields.Attachments) > 0 {
@@ -71,10 +74,13 @@ func Attachments(tickets ...jira.Ticket) (*TTestResult, error) {
 
 // StepsToReproduce performs Welch's T Test on steps to reproduce presence or not for all tickets.
 func StepsToReproduce(tickets ...jira.Ticket) (*TTestResult, error) {
-	var withTimes Stats
-	var withoutTimes Stats
+	var withTimes stats
+	var withoutTimes stats
 	for _, t := range tickets {
-		if t.TimeToClose <= 0 {
+		highPriority := jira.IsHighPriority(t)
+		if t.TimeToClose <= 0 ||
+			t.TimeToClose > 27000 ||
+			!highPriority {
 			continue
 		}
 		if t.HasStepsToReproduce {
@@ -88,10 +94,13 @@ func StepsToReproduce(tickets ...jira.Ticket) (*TTestResult, error) {
 
 // Stacktraces performs Welch's T Test on stack traces presence or not for all tickets.
 func Stacktraces(tickets ...jira.Ticket) (*TTestResult, error) {
-	var withTimes Stats
-	var withoutTimes Stats
+	var withTimes stats
+	var withoutTimes stats
 	for _, t := range tickets {
-		if t.TimeToClose <= 0 {
+		highPriority := jira.IsHighPriority(t)
+		if t.TimeToClose <= 0 ||
+			t.TimeToClose > 27000 ||
+			!highPriority {
 			continue
 		}
 		if t.HasStackTrace {
@@ -105,62 +114,78 @@ func Stacktraces(tickets ...jira.Ticket) (*TTestResult, error) {
 
 // CommentsComplexity performs Spearman R's test on the complexity of comments and times-to-close.
 func CommentsComplexity(tickets ...jira.Ticket) *SpearmanResult {
-	var comms Stats
-	var times Stats
+	var comms stats
+	var times stats
 	for _, t := range tickets {
-		if t.TimeToClose <= 0 {
-			continue
+		highPriority := jira.IsHighPriority(t)
+		if highPriority &&
+			t.TimeToClose > 0 &&
+			t.TimeToClose < 27000 &&
+			t.CommentWordsCount > 0 &&
+			t.CommentWordsCount < 2500 {
+			comms = append(comms, float64(t.CommentWordsCount))
+			times = append(times, t.TimeToClose)
 		}
-		comms = append(comms, float64(t.CommentWordsCount))
-		times = append(times, t.TimeToClose)
 	}
 	return twoSampleSpearmanRTest(comms, times)
 }
 
 // FieldsComplexity performs Spearman R's test on the complexity of summary&description and times-to-close.
 func FieldsComplexity(tickets ...jira.Ticket) *SpearmanResult {
-	var fields Stats
-	var times Stats
+	var fields stats
+	var times stats
 	for _, t := range tickets {
-		if t.TimeToClose <= 0 {
-			continue
+		highPriority := jira.IsHighPriority(t)
+		if highPriority &&
+			t.TimeToClose > 0 &&
+			t.TimeToClose <= 27000 &&
+			t.SummaryDescWordsCount > 0 &&
+			t.SummaryDescWordsCount < 5000 {
+			fields = append(fields, float64(t.SummaryDescWordsCount))
+			times = append(times, t.TimeToClose)
 		}
-		fields = append(fields, float64(t.SummaryDescWordsCount))
-		times = append(times, t.TimeToClose)
 	}
 	return twoSampleSpearmanRTest(fields, times)
 }
 
 // Sentiment performs Spearman R's test on sentiment scores and times-to-close.
 func Sentiment(tickets ...jira.Ticket) *SpearmanResult {
-	var scores Stats
-	var times Stats
+	var scores stats
+	var times stats
 	for _, t := range tickets {
-		if t.TimeToClose <= 0 || !t.Sentiment.HasScore {
-			continue
+		highPriority := jira.IsHighPriority(t)
+		if highPriority &&
+			t.TimeToClose > 0 &&
+			t.TimeToClose <= 27000 &&
+			t.GrammarCorrectness.HasScore &&
+			t.GrammarCorrectness.Score < 115 {
+			scores = append(scores, t.Sentiment.Score)
+			times = append(times, t.TimeToClose)
 		}
-		scores = append(scores, t.Sentiment.Score)
-		times = append(times, t.TimeToClose)
 	}
 	return twoSampleSpearmanRTest(scores, times)
 }
 
 // Grammar performs Spearman R's test on grammar correctness scores and times-to-close.
 func Grammar(tickets ...jira.Ticket) *SpearmanResult {
-	var scores Stats
-	var times Stats
+	var scores stats
+	var times stats
 	for _, t := range tickets {
-		if t.TimeToClose <= 0 || !t.GrammarCorrectness.HasScore {
-			continue
+		highPriority := jira.IsHighPriority(t)
+		if highPriority &&
+			t.TimeToClose > 0 &&
+			t.TimeToClose <= 27000 &&
+			t.GrammarCorrectness.HasScore &&
+			t.GrammarCorrectness.Score < 115 {
+			scores = append(scores, float64(t.GrammarCorrectness.Score))
+			times = append(times, t.TimeToClose)
 		}
-		scores = append(scores, float64(t.GrammarCorrectness.Score))
-		times = append(times, t.TimeToClose)
 	}
 	return twoSampleSpearmanRTest(scores, times)
 }
 
 // twoSampleSpearmanRTest returns the rank correlation coefficient and p value given two samples.
-func twoSampleSpearmanRTest(xs, ys Stats) *SpearmanResult {
+func twoSampleSpearmanRTest(xs, ys stats) *SpearmanResult {
 	rs, p := onlinestats.Spearman(xs, ys)
 	return &SpearmanResult{
 		Rs: rs,
