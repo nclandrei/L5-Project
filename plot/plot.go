@@ -310,6 +310,11 @@ func scatter(xAxis, yAxis, title, filepath string, xs []float64, ys []float64) e
 				Bottom: 60,
 			},
 		},
+		Background: chart.Style{
+			Padding: chart.Box{
+				Top: 40,
+			},
+		},
 		XAxis: chart.XAxis{
 			Name:      xAxis,
 			NameStyle: chart.Style{Show: true},
@@ -319,11 +324,6 @@ func scatter(xAxis, yAxis, title, filepath string, xs []float64, ys []float64) e
 			Name:      yAxis,
 			NameStyle: chart.Style{Show: true},
 			Style:     chart.Style{Show: true},
-		},
-		Background: chart.Style{
-			Padding: chart.Box{
-				Top: 40,
-			},
 		},
 		Series: []chart.Series{
 			chart.ContinuousSeries{
