@@ -12,10 +12,22 @@
   version = "v0.19.0"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/aclements/go-moremath"
+  packages = ["mathx"]
+  revision = "b1aff36309c727972dd8b46fcc93f88763a62348"
+
+[[projects]]
   name = "github.com/boltdb/bolt"
   packages = ["."]
   revision = "2f1ce7a837dcb8da3ec595b1dac9d0632f0f99e8"
   version = "v1.3.1"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/dgryski/go-onlinestats"
+  packages = ["."]
+  revision = "1c7d1946876822b4a3a4b11b598e3aad1d05265e"
 
 [[projects]]
   branch = "master"
@@ -224,6 +236,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "6045024687086a2ff4de6735932a71f5e97611f20af167dfbe4e25cce41fd062"
+  inputs-digest = "b861fa1f35b259c36298ee9c089d262f1904ddfe541188611148b3d2d1729174"
   solver-name = "gps-cdcl"
   solver-version = 1
