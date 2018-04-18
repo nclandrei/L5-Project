@@ -21,10 +21,16 @@ func TimesToClose(tickets ...jira.Ticket) {
 		var complete bool
 		for _, history := range tickets[i].Changelog.Histories {
 			for _, item := range history.Items {
-				if item.Field == "status" && item.FromString == "Open" && item.ToString == "Closed" {
+				if item.Field == "status" && (item.ToString == "Closed" || item.ToString == "Resolved" ||
+					item.ToString == "Done" || item.ToString == "Completed" || item.ToString == "Fixed" ||
+					item.ToString == "Verified") {
 					tickets[i].TimeToClose = calculateTimeDifference(history.Created, tickets[i].Fields.Created)
 					complete = true
+					break
 				}
+			}
+			if complete {
+				break
 			}
 		}
 		if !complete {
