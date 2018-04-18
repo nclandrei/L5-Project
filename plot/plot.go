@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	graphsPath = "resources/graphs"
+	graphsFolder = "graphs"
 )
 
 // Plot defines a standard analysis plotting function.
@@ -78,7 +78,7 @@ func Attachments(tickets ...jira.Ticket) error {
 	return barchart(
 		"Presence and type of attachments analysis",
 		"Time-To-Close (hours)",
-		fmt.Sprintf("%s/%s/%s", wd, graphsPath, "attachments.png"),
+		fmt.Sprintf("%s/%s/%s", wd, graphsFolder, "attachments.png"),
 		result,
 	)
 }
@@ -106,7 +106,7 @@ func StepsToReproduce(tickets ...jira.Ticket) error {
 	return barchart(
 		"Steps To Reproduce Analysis",
 		"Time-To-Close (hours)",
-		fmt.Sprintf("%s/%s/%s", wd, graphsPath, "steps_to_reproduce.png"),
+		fmt.Sprintf("%s/%s/%s", wd, graphsFolder, "steps_to_reproduce.png"),
 		map[string]float64{
 			"With Steps to Reproduce":    withSum / float64(withCount),
 			"Without Steps to Reproduce": withoutSum / float64(len(tickets)-withCount),
@@ -137,7 +137,7 @@ func Stacktraces(tickets ...jira.Ticket) error {
 	return barchart(
 		"Stack Traces Analysis",
 		"Time-To-Close (hours)",
-		fmt.Sprintf("%s/%s/%s", wd, graphsPath, "stack_traces.png"),
+		fmt.Sprintf("%s/%s/%s", wd, graphsFolder, "stack_traces.png"),
 		map[string]float64{
 			"With Stack Traces":    withSum / float64(withCount),
 			"Without Stack Traces": withoutSum / float64(len(tickets)-withCount),
@@ -161,13 +161,11 @@ func CommentsComplexity(tickets ...jira.Ticket) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Number of tickets with comments: %d\n", len(times))
-	filePath := fmt.Sprintf("%s/%s/%s", wd, graphsPath, "comment_complexity.png")
 	return scatter(
 		"Comments Complexity",
 		"Time-To-Close (hours)",
 		"Comments Complexity Analysis",
-		filePath,
+		fmt.Sprintf("%s/%s/%s", wd, graphsFolder, "comment_complexity.png"),
 		comms,
 		times,
 	)
@@ -190,7 +188,7 @@ func FieldsComplexity(tickets ...jira.Ticket) error {
 	if err != nil {
 		return err
 	}
-	filePath := fmt.Sprintf("%s/%s/%s", wd, graphsPath, "fields_complexity.png")
+	filePath := fmt.Sprintf("%s/%s/%s", wd, graphsFolder, "fields_complexity.png")
 	return scatter(
 		"Fields Complexity",
 		"Time-To-Close (hours)",
@@ -217,8 +215,7 @@ func GrammarCorrectness(tickets ...jira.Ticket) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Number of tickets with grammar correctness scores: %d\n", len(times))
-	filePath := fmt.Sprintf("%s/%s/%s", wd, graphsPath, "grammar_correctness.png")
+	filePath := fmt.Sprintf("%s/%s/%s", wd, graphsFolder, "grammar_correctness.png")
 	return scatter(
 		"Grammar Correctness Score",
 		"Time-To-Close (hours)",
@@ -245,8 +242,7 @@ func SentimentAnalysis(tickets ...jira.Ticket) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Number of tickets with sentiment analysis scores: %d\n", len(times))
-	filePath := fmt.Sprintf("%s/%s/%s", wd, graphsPath, "sentiment_analysis.png")
+	filePath := fmt.Sprintf("%s/%s/%s", wd, graphsFolder, "sentiment_analysis.png")
 	return scatter(
 		"Sentiment Score",
 		"Time-To-Close (hours)",
