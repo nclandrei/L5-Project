@@ -2,12 +2,28 @@ package jira
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 )
 
-// Custom time format corresponding to Jira format.
-const timeFormat = "2006-01-02T15:04:05.000-0700"
+const (
+	// Custom time format corresponding to Jira format.
+	timeFormat = "2006-01-02T15:04:05.000-0700"
+
+	// MaxTimeToCloseH represents the maximum number of hours until ticket closing allowed in analysis, plotting and stats.
+	MaxTimeToCloseH = 27000
+
+	// MaxCommWordCount represents the maximum number of comments allowed in analysis, plotting and stats.
+	MaxCommWordCount = 25000
+
+	// MaxGrammarErrCount represents the maximum number of grammar errors allowed in analysis, plotting and stats.
+	MaxGrammarErrCount = 115
+
+	// MaxSummaryDescWordCount represents the maximum number of summary & description words allowed in
+	// analysis, plotting and stats.
+	MaxSummaryDescWordCount = 5000
+)
 
 // Time holds the time formatted in Jira's specific format.
 type Time time.Time
@@ -186,4 +202,13 @@ type Comment struct {
 	Author  Author `json:"author"`
 	Created Time   `json:"created,omitempty"`
 	Updated Time   `json:"updated,omitempty"`
+}
+
+// IsHighPriority returns whether a ticket is of high priority or not.
+func IsHighPriority(t Ticket) bool {
+	if t.Fields.Priority.ID == "" {
+		return false
+	}
+	pID, _ := strconv.Atoi(t.Fields.Priority.ID)
+	return pID <= 4
 }
