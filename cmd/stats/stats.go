@@ -29,16 +29,16 @@ func main() {
 	flag.Parse()
 
 	categoricalTests := map[string]stats.CategoricalTest{
-		"Attachments":        stats.Attachments,
+		// "Attachments":        stats.Attachments,
 		"Steps To Reproduce": stats.StepsToReproduce,
-		"Stack Traces":       stats.Stacktraces,
+		// "Stack Traces":       stats.Stacktraces,
 	}
-	continuousTests := map[string]stats.ContinuousTest{
-		"Comments Complexity": stats.CommentsComplexity,
-		"Fields Complexity":   stats.FieldsComplexity,
-		"Sentiment Analysis":  stats.Sentiment,
-		"Grammar Correctness": stats.Grammar,
-	}
+	// continuousTests := map[string]stats.ContinuousTest{
+	// 	"Comments Complexity": stats.CommentsComplexity,
+	// 	"Fields Complexity":   stats.FieldsComplexity,
+	// 	"Sentiment Analysis":  stats.Sentiment,
+	// 	"Grammar Correctness": stats.Grammar,
+	// }
 
 	tickets, err := boltDB.Tickets()
 	if err != nil {
@@ -59,17 +59,17 @@ func main() {
 		}(k, v)
 	}
 
-	for k, v := range continuousTests {
-		wg.Add(1)
-		go func(name string, f stats.ContinuousTest) {
-			defer wg.Done()
-			result := f(tickets...)
-			if err != nil {
-				log.Printf("could not compute statistical test: %v\n", err)
-			}
-			log.Printf("%s --- Rs: %f --- P: %f\n", name, result.Rs, result.P)
-		}(k, v)
-	}
+	// for k, v := range continuousTests {
+	// 	wg.Add(1)
+	// 	go func(name string, f stats.ContinuousTest) {
+	// 		defer wg.Done()
+	// 		result := f(tickets...)
+	// 		if err != nil {
+	// 			log.Printf("could not compute statistical test: %v\n", err)
+	// 		}
+	// 		log.Printf("%s --- Rs: %f --- P: %f\n", name, result.Rs, result.P)
+	// 	}(k, v)
+	// }
 
 	wg.Wait()
 }
