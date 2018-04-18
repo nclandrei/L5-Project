@@ -12,6 +12,7 @@ main
 storer
 analyzer
 plotter
+statser
 
 # Test binary, build with `go test -c`
 *.test
