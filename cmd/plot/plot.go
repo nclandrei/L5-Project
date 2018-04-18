@@ -47,8 +47,8 @@ func main() {
 		funcs = append(funcs, plot.FieldsComplexity)
 		break
 	case "all":
-		funcs = append(funcs, plot.CommentsComplexity, plot.FieldsComplexity, plot.SentimentAnalysis, plot.GrammarCorrectness,
-			plot.Stacktraces, plot.StepsToReproduce, plot.Attachments)
+		funcs = append(funcs, plot.CommentsComplexity, plot.FieldsComplexity, plot.SentimentAnalysis,
+			plot.GrammarCorrectness, plot.Stacktraces, plot.StepsToReproduce, plot.Attachments)
 		break
 	default:
 		fmt.Fprintln(os.Stderr, "plot type not available")
