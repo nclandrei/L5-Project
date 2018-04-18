@@ -152,7 +152,8 @@ func CommentsComplexity(tickets ...jira.Ticket) error {
 	for _, ticket := range tickets {
 		if ticket.TimeToClose > 0 &&
 			ticket.TimeToClose < 27000 &&
-			ticket.CommentWordsCount > 0 {
+			ticket.CommentWordsCount > 0 &&
+			ticket.CommentWordsCount < 25000 {
 			comms = append(comms, float64(ticket.CommentWordsCount))
 			times = append(times, ticket.TimeToClose)
 		}
@@ -179,7 +180,7 @@ func FieldsComplexity(tickets ...jira.Ticket) error {
 		if ticket.TimeToClose > 0 &&
 			ticket.TimeToClose <= 27000 &&
 			ticket.SummaryDescWordsCount > 0 &&
-			ticket.SummaryDescWordsCount < 1000 {
+			ticket.SummaryDescWordsCount < 5000 {
 			fields = append(fields, float64(ticket.SummaryDescWordsCount))
 			times = append(times, ticket.TimeToClose)
 		}
