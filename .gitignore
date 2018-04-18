@@ -1,6 +1,5 @@
 ### graphs and bolt DB ###
-resources/bolt/
-resources/graphs/
+graphs
 users.db
 
 ### Go ###
