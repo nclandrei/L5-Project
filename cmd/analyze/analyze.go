@@ -7,10 +7,9 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/nclandrei/ticketguru/analyze"
 	"github.com/nclandrei/ticketguru/db"
-	"sync"
-	// "github.com/nclandrei/ticketguru/jira"
 	"log"
 	"os"
+	"sync"
 )
 
 func main() {
