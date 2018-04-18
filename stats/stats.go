@@ -11,8 +11,40 @@ var (
 	errZeroVariance = errors.New("sample has zero variance")
 )
 
+// Stats defines the basic slice of float64 used for statistical tests.
+type Stats []float64
+
+// Weight calculates the default weight of a Stats value.
+func (s Stats) Weight() float64 {
+	return float64(len(s))
+}
+
+// Len returns the length of the underlying slice.
+func (s Stats) Len() int {
+	return len(s)
+}
+
+// Mean calculates the mean of the variables inside the underlying slice of a Stats value.
+func (s Stats) Mean() float64 {
+	var total float64
+	for _, n := range s {
+		total += n
+	}
+	return total / float64(len(s))
+}
+
+// Variance returns the variance of the underlying slice of a Stats value.
+func (s Stats) Variance() float64 {
+	var total float64
+	mean := s.Mean()
+	for _, number := range s {
+		total += math.Pow(number-mean, 2)
+	}
+	return total / float64(len(s)-1)
+}
+
 // TwoSampleSpearmanRTest returns the rank correlation coefficient and p value given two samples.
-func TwoSampleSpearmanRTest(xs, ys []float64) *SpearmanResult {
+func TwoSampleSpearmanRTest(xs, ys Stats) *SpearmanResult {
 	rs, p := onlinestats.Spearman(xs, ys)
 	return &SpearmanResult{
 		Rs: rs,
@@ -26,7 +58,7 @@ func TwoSampleWelchTTest(x1, x2 Sample) (*TTestResult, error) {
 	if n1 <= 1 || n2 <= 1 {
 		return nil, errSampleSize
 	}
-	v1, v2 := x1.Var(), x2.Var()
+	v1, v2 := x1.Variance(), x2.Variance()
 	if v1 == 0 && v2 == 0 {
 		return nil, errZeroVariance
 	}
@@ -40,10 +72,9 @@ func TwoSampleWelchTTest(x1, x2 Sample) (*TTestResult, error) {
 
 // A Sample can be used to compute various statistical tests.
 type Sample interface {
-	Len() int
 	Weight() float64
 	Mean() float64
-	Var() float64
+	Variance() float64
 }
 
 // A TTestResult is the result of a t-test.
