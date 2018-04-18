@@ -1,6 +1,7 @@
 package analyze
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 	"time"
@@ -14,26 +15,31 @@ type TicketAnalysis func(...jira.Ticket)
 
 // TimesToClose returns how much time it took to close a variadic number of tickets.
 func TimesToClose(tickets ...jira.Ticket) {
+	var count int
 	for i := range tickets {
 		if !isTicketHighPriority(tickets[i]) || tickets[i].Fields.Status.Name == "Open" {
 			continue
 		}
-		var complete bool
+		var closed bool
 		for _, history := range tickets[i].Changelog.Histories {
 			for _, item := range history.Items {
 				if item.Field == "status" && (item.ToString == "Closed" || item.ToString == "Resolved" ||
-					item.ToString == "Done" || item.ToString == "Completed" || item.ToString == "Fixed" ||
-					item.ToString == "Verified") {
+					item.ToString == "Done" || item.ToString == "Completed" || item.ToString == "Fixed") {
 					tickets[i].TimeToClose = calculateTimeDifference(history.Created, tickets[i].Fields.Created)
-					complete = true
+					count++
+					closed = true
 					break
 				}
 			}
-			if complete {
+			if closed {
 				break
 			}
 		}
+		if !closed {
+			tickets[i].TimeToClose = 0
+		}
 	}
+	fmt.Println(count)
 }
 
 // FieldsComplexity counts the number of words in summary and description for a variadic number of tickets.
