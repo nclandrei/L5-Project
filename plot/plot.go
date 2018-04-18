@@ -77,6 +77,7 @@ func Attachments(tickets ...jira.Ticket) error {
 	}
 	return barchart(
 		"Presence and type of attachments analysis",
+		"Time-To-Close (hours)",
 		fmt.Sprintf("%s/%s/%s", wd, graphsPath, "attachments.png"),
 		result,
 	)
@@ -104,6 +105,7 @@ func StepsToReproduce(tickets ...jira.Ticket) error {
 	}
 	return barchart(
 		"Steps To Reproduce Analysis",
+		"Time-To-Close (hours)",
 		fmt.Sprintf("%s/%s/%s", wd, graphsPath, "steps_to_reproduce.png"),
 		map[string]float64{
 			"With Steps to Reproduce":    withSum / float64(withCount),
@@ -134,6 +136,7 @@ func Stacktraces(tickets ...jira.Ticket) error {
 	}
 	return barchart(
 		"Stack Traces Analysis",
+		"Time-To-Close (hours)",
 		fmt.Sprintf("%s/%s/%s", wd, graphsPath, "stack_traces.png"),
 		map[string]float64{
 			"With Stack Traces":    withSum / float64(withCount),
@@ -162,7 +165,7 @@ func CommentsComplexity(tickets ...jira.Ticket) error {
 	filePath := fmt.Sprintf("%s/%s/%s", wd, graphsPath, "comment_complexity.png")
 	return scatter(
 		"Comments Complexity",
-		"Time-To-Close",
+		"Time-To-Close (hours)",
 		"Comments Complexity Analysis",
 		filePath,
 		comms,
@@ -190,7 +193,7 @@ func FieldsComplexity(tickets ...jira.Ticket) error {
 	filePath := fmt.Sprintf("%s/%s/%s", wd, graphsPath, "fields_complexity.png")
 	return scatter(
 		"Fields Complexity",
-		"Time-To-Close",
+		"Time-To-Close (hours)",
 		"Fields Complexity Analysis",
 		filePath,
 		fields,
@@ -218,7 +221,7 @@ func GrammarCorrectness(tickets ...jira.Ticket) error {
 	filePath := fmt.Sprintf("%s/%s/%s", wd, graphsPath, "grammar_correctness.png")
 	return scatter(
 		"Grammar Correctness Score",
-		"Time-To-Close",
+		"Time-To-Close (hours)",
 		"Grammar Correctness Analysis",
 		filePath,
 		scores,
@@ -246,7 +249,7 @@ func SentimentAnalysis(tickets ...jira.Ticket) error {
 	filePath := fmt.Sprintf("%s/%s/%s", wd, graphsPath, "sentiment_analysis.png")
 	return scatter(
 		"Sentiment Score",
-		"Time-To-Close",
+		"Time-To-Close (hours)",
 		"Sentiment Analysis",
 		filePath,
 		scores,
@@ -255,7 +258,7 @@ func SentimentAnalysis(tickets ...jira.Ticket) error {
 }
 
 // barchart computes and saves a barchart given a variadic number of bars.
-func barchart(title, filepath string, vals map[string]float64) error {
+func barchart(title, yAxis, filepath string, vals map[string]float64) error {
 	var bars []chart.Value
 	for k, v := range vals {
 		bars = append(bars, chart.Value{
@@ -268,7 +271,7 @@ func barchart(title, filepath string, vals map[string]float64) error {
 		TitleStyle: chart.Style{
 			Show: true,
 			Padding: chart.Box{
-				Bottom: 20,
+				Bottom: 60,
 			},
 		},
 		Background: chart.Style{
@@ -282,13 +285,9 @@ func barchart(title, filepath string, vals map[string]float64) error {
 			Show: true,
 		},
 		YAxis: chart.YAxis{
-			Name: "Time-To-Close",
-			NameStyle: chart.Style{
-				Show: true,
-			},
-			Style: chart.Style{
-				Show: true,
-			},
+			Name:      yAxis,
+			NameStyle: chart.Style{Show: true},
+			Style:     chart.Style{Show: true},
 		},
 		Bars: bars,
 	}
@@ -307,6 +306,13 @@ func scatter(xAxis, yAxis, title, filepath string, xs []float64, ys []float64) e
 	}
 
 	s := chart.Chart{
+		Title: title,
+		TitleStyle: chart.Style{
+			Show: true,
+			Padding: chart.Box{
+				Bottom: 60,
+			},
+		},
 		XAxis: chart.XAxis{
 			Name:      xAxis,
 			NameStyle: chart.Style{Show: true},
@@ -317,9 +323,10 @@ func scatter(xAxis, yAxis, title, filepath string, xs []float64, ys []float64) e
 			NameStyle: chart.Style{Show: true},
 			Style:     chart.Style{Show: true},
 		},
-		Title: title,
-		TitleStyle: chart.Style{
-			Show: true,
+		Background: chart.Style{
+			Padding: chart.Box{
+				Top: 40,
+			},
 		},
 		Series: []chart.Series{
 			chart.ContinuousSeries{
