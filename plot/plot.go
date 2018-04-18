@@ -207,7 +207,8 @@ func GrammarCorrectness(tickets ...jira.Ticket) error {
 	for _, ticket := range tickets {
 		if ticket.TimeToClose > 0 &&
 			ticket.TimeToClose <= 27000 &&
-			ticket.GrammarCorrectness.HasScore {
+			ticket.GrammarCorrectness.HasScore &&
+			ticket.GrammarCorrectness.Score < 115 {
 			scores = append(scores, float64(ticket.GrammarCorrectness.Score))
 			times = append(times, ticket.TimeToClose)
 		}
