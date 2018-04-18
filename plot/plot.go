@@ -87,7 +87,7 @@ func Attachments(tickets ...jira.Ticket) error {
 
 // StepsToReproduce produces a barchart for presence of steps to reproduce in tickets.
 func StepsToReproduce(tickets ...jira.Ticket) error {
-	var withCount int
+	var withCount, withoutCount int
 	var withSum, withoutSum float64
 	for _, ticket := range tickets {
 		highPriority := jira.IsHighPriority(ticket)
@@ -100,6 +100,7 @@ func StepsToReproduce(tickets ...jira.Ticket) error {
 			withCount++
 			withSum += ticket.TimeToClose
 		} else {
+			withoutCount++
 			withoutSum += ticket.TimeToClose
 		}
 	}
@@ -113,14 +114,14 @@ func StepsToReproduce(tickets ...jira.Ticket) error {
 		fmt.Sprintf("%s/%s/%s", wd, graphsFolder, "steps_to_reproduce.png"),
 		map[string]float64{
 			"With Steps to Reproduce":    withSum / float64(withCount),
-			"Without Steps to Reproduce": withoutSum / float64(len(tickets)-withCount),
+			"Without Steps to Reproduce": withoutSum / float64(withoutCount),
 		},
 	)
 }
 
 // Stacktraces produces a barchart for presence of stacktraces in tickets.
 func Stacktraces(tickets ...jira.Ticket) error {
-	var withCount int
+	var withCount, withoutCount int
 	var withSum, withoutSum float64
 	for _, ticket := range tickets {
 		highPriority := jira.IsHighPriority(ticket)
@@ -133,6 +134,7 @@ func Stacktraces(tickets ...jira.Ticket) error {
 			withCount++
 			withSum += ticket.TimeToClose
 		} else {
+			withoutCount++
 			withoutSum += ticket.TimeToClose
 		}
 	}
@@ -146,7 +148,7 @@ func Stacktraces(tickets ...jira.Ticket) error {
 		fmt.Sprintf("%s/%s/%s", wd, graphsFolder, "stack_traces.png"),
 		map[string]float64{
 			"With Stack Traces":    withSum / float64(withCount),
-			"Without Stack Traces": withoutSum / float64(len(tickets)-withCount),
+			"Without Stack Traces": withoutSum / float64(withoutCount),
 		},
 	)
 }
