@@ -173,7 +173,7 @@ func CommentsComplexity(tickets ...jira.Ticket) error {
 		return err
 	}
 	return scatter(
-		"Comments Complexity",
+		"Number of words in all comments",
 		"Time-To-Close (hours)",
 		"Comments Complexity Analysis",
 		fmt.Sprintf("%s/%s/%s", wd, graphsFolder, "comment_complexity.png"),
@@ -203,7 +203,7 @@ func FieldsComplexity(tickets ...jira.Ticket) error {
 	}
 	filePath := fmt.Sprintf("%s/%s/%s", wd, graphsFolder, "fields_complexity.png")
 	return scatter(
-		"Fields Complexity",
+		"Number of words in summary and description",
 		"Time-To-Close (hours)",
 		"Fields Complexity Analysis",
 		filePath,
@@ -233,7 +233,7 @@ func GrammarCorrectness(tickets ...jira.Ticket) error {
 	}
 	filePath := fmt.Sprintf("%s/%s/%s", wd, graphsFolder, "grammar_correctness.png")
 	return scatter(
-		"Grammar Correctness Score",
+		"Number of grammar errors in summary, description and comments",
 		"Time-To-Close (hours)",
 		"Grammar Correctness Analysis",
 		filePath,
