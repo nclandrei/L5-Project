@@ -78,7 +78,7 @@ func Attachments(tickets ...jira.Ticket) error {
 		return err
 	}
 	return barchart(
-		"Presence and type of attachments analysis",
+		"Attachments analysis",
 		"Time-To-Close (hours)",
 		fmt.Sprintf("%s/%s/%s", wd, graphsFolder, "attachments.png"),
 		result,
@@ -113,8 +113,8 @@ func StepsToReproduce(tickets ...jira.Ticket) error {
 		"Time-To-Close (hours)",
 		fmt.Sprintf("%s/%s/%s", wd, graphsFolder, "steps_to_reproduce.png"),
 		map[string]float64{
-			"With Steps to Reproduce":    withSum / float64(withCount),
-			"Without Steps to Reproduce": withoutSum / float64(withoutCount),
+			"With steps to reproduce":    withSum / float64(withCount),
+			"Without steps to reproduce": withoutSum / float64(withoutCount),
 		},
 	)
 }
@@ -147,8 +147,8 @@ func Stacktraces(tickets ...jira.Ticket) error {
 		"Time-To-Close (hours)",
 		fmt.Sprintf("%s/%s/%s", wd, graphsFolder, "stack_traces.png"),
 		map[string]float64{
-			"With Stack Traces":    withSum / float64(withCount),
-			"Without Stack Traces": withoutSum / float64(withoutCount),
+			"With stack traces":    withSum / float64(withCount),
+			"Without stack traces": withoutSum / float64(withoutCount),
 		},
 	)
 }
@@ -173,7 +173,7 @@ func CommentsComplexity(tickets ...jira.Ticket) error {
 		return err
 	}
 	return scatter(
-		"Number of words in all comments",
+		"Number of words in comments",
 		"Time-To-Close (hours)",
 		"Comments Complexity Analysis",
 		fmt.Sprintf("%s/%s/%s", wd, graphsFolder, "comment_complexity.png"),
@@ -262,7 +262,7 @@ func SentimentAnalysis(tickets ...jira.Ticket) error {
 	}
 	filePath := fmt.Sprintf("%s/%s/%s", wd, graphsFolder, "sentiment_analysis.png")
 	return scatter(
-		"Sentiment Score",
+		"Sentiment score for summary, description and comments",
 		"Time-To-Close (hours)",
 		"Sentiment Analysis",
 		filePath,
