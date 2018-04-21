@@ -289,19 +289,23 @@ func barchart(title, yAxis, filepath string, vals map[string]float64) error {
 			},
 		},
 		Background: chart.Style{
+			Show: true,
 			Padding: chart.Box{
 				Top: 40,
 			},
 		},
-		Height:   512,
-		BarWidth: 60,
+		Height:   1024,
+		BarWidth: 80,
 		XAxis: chart.Style{
 			Show: true,
 		},
 		YAxis: chart.YAxis{
-			Name:      yAxis,
-			NameStyle: chart.Style{Show: true},
-			Style:     chart.Style{Show: true},
+			Name: yAxis,
+			NameStyle: chart.Style{
+				Show:     true,
+				FontSize: 20,
+			},
+			Style: chart.Style{Show: true},
 		},
 		Bars: bars,
 	}
@@ -327,20 +331,35 @@ func scatter(xAxis, yAxis, title, filepath string, xs []float64, ys []float64) e
 				Bottom: 60,
 			},
 		},
+		Height: 1024,
+		Width:  1680,
 		Background: chart.Style{
+			Show: true,
 			Padding: chart.Box{
 				Top: 40,
 			},
 		},
 		XAxis: chart.XAxis{
-			Name:      xAxis,
-			NameStyle: chart.Style{Show: true},
-			Style:     chart.Style{Show: true},
+			Name: xAxis,
+			NameStyle: chart.Style{
+				Show:     true,
+				FontSize: 20,
+				Padding: chart.Box{
+					Right: 60,
+				},
+			},
+			Style: chart.Style{Show: true},
 		},
 		YAxis: chart.YAxis{
-			Name:      yAxis,
-			NameStyle: chart.Style{Show: true},
-			Style:     chart.Style{Show: true},
+			Name: yAxis,
+			NameStyle: chart.Style{
+				Show:     true,
+				FontSize: 20,
+				Padding: chart.Box{
+					Right: 60,
+				},
+			},
+			Style: chart.Style{Show: true},
 		},
 		Series: []chart.Series{
 			chart.ContinuousSeries{
