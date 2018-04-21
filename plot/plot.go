@@ -285,7 +285,7 @@ func barchart(title, yAxis, filepath string, vals map[string]float64) error {
 		TitleStyle: chart.Style{
 			Show: true,
 			Padding: chart.Box{
-				Bottom: 60,
+				Bottom: 80,
 			},
 		},
 		Background: chart.Style{
@@ -294,7 +294,6 @@ func barchart(title, yAxis, filepath string, vals map[string]float64) error {
 				Top: 40,
 			},
 		},
-		Height:   1024,
 		BarWidth: 80,
 		XAxis: chart.Style{
 			Show: true,
@@ -302,8 +301,7 @@ func barchart(title, yAxis, filepath string, vals map[string]float64) error {
 		YAxis: chart.YAxis{
 			Name: yAxis,
 			NameStyle: chart.Style{
-				Show:     true,
-				FontSize: 20,
+				Show: true,
 			},
 			Style: chart.Style{Show: true},
 		},
@@ -330,13 +328,13 @@ func scatter(xAxis, yAxis, title, filepath string, xs []float64, ys []float64) e
 			Padding: chart.Box{
 				Bottom: 60,
 			},
+			FontSize: 25,
 		},
-		Height: 1024,
-		Width:  1680,
 		Background: chart.Style{
 			Show: true,
 			Padding: chart.Box{
-				Top: 40,
+				Top:   50,
+				Right: 30,
 			},
 		},
 		XAxis: chart.XAxis{
@@ -344,9 +342,6 @@ func scatter(xAxis, yAxis, title, filepath string, xs []float64, ys []float64) e
 			NameStyle: chart.Style{
 				Show:     true,
 				FontSize: 20,
-				Padding: chart.Box{
-					Right: 60,
-				},
 			},
 			Style: chart.Style{Show: true},
 		},
@@ -355,9 +350,6 @@ func scatter(xAxis, yAxis, title, filepath string, xs []float64, ys []float64) e
 			NameStyle: chart.Style{
 				Show:     true,
 				FontSize: 20,
-				Padding: chart.Box{
-					Right: 60,
-				},
 			},
 			Style: chart.Style{Show: true},
 		},
