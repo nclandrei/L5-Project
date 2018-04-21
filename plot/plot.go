@@ -285,13 +285,14 @@ func barchart(title, yAxis, filepath string, vals map[string]float64) error {
 		TitleStyle: chart.Style{
 			Show: true,
 			Padding: chart.Box{
-				Bottom: 80,
+				Bottom: 60,
 			},
+			FontSize: 25,
 		},
 		Background: chart.Style{
 			Show: true,
 			Padding: chart.Box{
-				Top: 40,
+				Top: 50,
 			},
 		},
 		BarWidth: 80,
@@ -301,7 +302,8 @@ func barchart(title, yAxis, filepath string, vals map[string]float64) error {
 		YAxis: chart.YAxis{
 			Name: yAxis,
 			NameStyle: chart.Style{
-				Show: true,
+				Show:     true,
+				FontSize: 20,
 			},
 			Style: chart.Style{Show: true},
 		},
