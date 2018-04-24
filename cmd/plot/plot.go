@@ -13,7 +13,7 @@ import (
 var (
 	dbPath = flag.String(
 		"dbPath",
-		"/Users/nclandrei/Code/go/src/github.com/nclandrei/ticketguru/users.db",
+		"/Users/nclandrei/Code/go/src/github.com/nclandrei/ticketguru/issues.db",
 		"path to Bolt database file",
 	)
 	pType = flag.String("type", "all", "plot(s) to draw - available types: grammar, sentiment, steps_to_reprodce"+

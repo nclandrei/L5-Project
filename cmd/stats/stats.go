@@ -11,13 +11,13 @@ import (
 var (
 	dbPath = flag.String(
 		"dbPath",
-		"/Users/nclandrei/Code/go/src/github.com/nclandrei/ticketguru/users.db",
+		"/Users/nclandrei/Code/go/src/github.com/nclandrei/ticketguru/issues.db",
 		"path to Bolt database file",
 	)
 )
 
 func main() {
-	boltDB, err := db.NewBolt("users.db")
+	boltDB, err := db.NewBolt(*dbPath)
 	if err != nil {
 		log.Fatalf("could not access Bolt DB: %v\n", err)
 	}

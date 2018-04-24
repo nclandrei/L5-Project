@@ -25,7 +25,7 @@ var (
 	jiraURL     = flag.String("jiraURL", "http://issues.apache.org", "URL for Jira instance")
 	project     = flag.String("project", "Kafka", "name of the project to be queried upon")
 	gortnCnt    = flag.Int("goroutinesCount", maxNoGoroutines, "number of goroutines to be used")
-	dbPath      = flag.String("dbPath", "users.db", "absolute path to the Bolt database")
+	dbPath      = flag.String("dbPath", "issues.db", "absolute path to the Bolt database")
 	logToFile   = flag.Bool("file_log", false, "specifies whether application should log to file or not")
 	logFilePath = flag.String("log_path", "~/Code/go/src/github.com/nclandrei/ticketguru/log.txt", "path to logging file")
 )
