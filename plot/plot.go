@@ -294,7 +294,6 @@ func barchart(title, yAxis, filepath string, vals map[string]float64) error {
 			Padding: chart.Box{
 				Top: 50,
 			},
-			FillColor: drawing.ColorBlack,
 		},
 		Width:    1400,
 		Height:   1024,
@@ -341,7 +340,6 @@ func scatter(xAxis, yAxis, title, filepath string, xs []float64, ys []float64) e
 				Top:   50,
 				Right: 30,
 			},
-			FillColor: drawing.ColorBlack,
 		},
 		Width:  1400,
 		Height: 1024,
