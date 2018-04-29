@@ -295,7 +295,7 @@ func barchart(title, yAxis, filepath string, vals map[string]float64) error {
 				Top: 50,
 			},
 		},
-		Width:    1400,
+		Width:    2048,
 		Height:   1024,
 		BarWidth: 80,
 		XAxis: chart.Style{
@@ -341,7 +341,7 @@ func scatter(xAxis, yAxis, title, filepath string, xs []float64, ys []float64) e
 				Right: 30,
 			},
 		},
-		Width:  1400,
+		Width:  2048,
 		Height: 1024,
 		XAxis: chart.XAxis{
 			Name: xAxis,
