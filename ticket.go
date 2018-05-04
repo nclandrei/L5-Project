@@ -1,6 +1,7 @@
-package jira
+package ticketguru
 
 import (
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -98,6 +99,20 @@ type Fields struct {
 	Comments     Comments     `json:"comment,omitempty"`
 	Priority     Priority     `json:"priority,omitempty"`
 	Type         Type         `json:"issuetype,omitempty"`
+}
+
+// TicketKey returns the unique key of a Jira issue.
+func (t *JiraIssue) TicketKey() string {
+	return t.Key
+}
+
+// TicketBody returns the JSON encoded value of a Jira issue.
+func (t *JiraIssue) TicketBody() ([]byte, error) {
+	res, err := json.Marshal(t)
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
 }
 
 // Changelog defines the entire changelog of a Jira ticket.
@@ -213,7 +228,8 @@ func IsHighPriority(t JiraIssue) bool {
 	return pID <= 4
 }
 
-// type Ticket interface {
-// 	Key() string
-// 	Body() []byte
-// }
+// Ticket describes a general interface for either Jira issues or Bugzilla tickets.
+type Ticket interface {
+	TicketKey() string
+	TicketBody() ([]byte, error)
+}
