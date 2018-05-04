@@ -24,11 +24,11 @@ type Client struct {
 
 // SearchResponse defines the response payload retrieved through the search endpoint
 type SearchResponse struct {
-	Expand     string   `json:"expand,omitempty"`
-	StartAt    int      `json:"startAt,omitempty"`
-	MaxResults int      `json:"maxResults,omitempty"`
-	Total      int      `json:"total,omitempty"`
-	Issues     []Ticket `json:"issues,omitempty"`
+	Expand     string      `json:"expand,omitempty"`
+	StartAt    int         `json:"startAt,omitempty"`
+	MaxResults int         `json:"maxResults,omitempty"`
+	Total      int         `json:"total,omitempty"`
+	Issues     []JiraIssue `json:"issues,omitempty"`
 }
 
 // Session represents a Session JSON response by the JIRA API.
@@ -128,7 +128,7 @@ func (client *Client) AuthenticateClient() error {
 func (client *Client) Tickets(
 	projectName string,
 	paginationIndex int,
-	pageCount int) ([]Ticket, error) {
+	pageCount int) ([]JiraIssue, error) {
 
 	client.setSearchPath(projectName, paginationIndex, pageCount)
 	resp, err := client.Get(client.URL.String())

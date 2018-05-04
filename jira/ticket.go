@@ -56,8 +56,8 @@ func (t Time) MarshalJSON() ([]byte, error) {
 	return []byte(jTime), nil
 }
 
-// Ticket defines a Jira ticket.
-type Ticket struct {
+// JiraIssue defines a Jira ticket.
+type JiraIssue struct {
 	Key                   string    `json:"key" bson:"_id"`
 	Expand                string    `json:"_"`
 	ID                    string    `json:"-"`
@@ -205,10 +205,15 @@ type Comment struct {
 }
 
 // IsHighPriority returns whether a ticket is of high priority or not.
-func IsHighPriority(t Ticket) bool {
+func IsHighPriority(t JiraIssue) bool {
 	if t.Fields.Priority.ID == "" {
 		return false
 	}
 	pID, _ := strconv.Atoi(t.Fields.Priority.ID)
 	return pID <= 4
 }
+
+// type Ticket interface {
+// 	Key() string
+// 	Body() []byte
+// }
