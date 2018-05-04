@@ -41,14 +41,14 @@ func (s stats) Variance() float64 {
 
 // CategoricalTest defines a function that takes a variadic number of tickets and computes Welch's T test
 // on fields of them.
-type CategoricalTest func(...jira.Ticket) (*TTestResult, error)
+type CategoricalTest func(...jira.JiraIssue) (*TTestResult, error)
 
 // ContinuousTest defines a function that takes a variadic number of tickets and computes a Spearman R test
 // on fields of them.
-type ContinuousTest func(...jira.Ticket) *SpearmanResult
+type ContinuousTest func(...jira.JiraIssue) *SpearmanResult
 
 // Attachments performs Welch's T Test on all tickets' attachments.
-func Attachments(tickets ...jira.Ticket) (*TTestResult, error) {
+func Attachments(tickets ...jira.JiraIssue) (*TTestResult, error) {
 	var withTimes stats
 	var withoutTimes stats
 	for _, t := range tickets {
@@ -68,7 +68,7 @@ func Attachments(tickets ...jira.Ticket) (*TTestResult, error) {
 }
 
 // StepsToReproduce performs Welch's T Test on steps to reproduce presence or not for all tickets.
-func StepsToReproduce(tickets ...jira.Ticket) (*TTestResult, error) {
+func StepsToReproduce(tickets ...jira.JiraIssue) (*TTestResult, error) {
 	var withTimes stats
 	var withoutTimes stats
 	for _, t := range tickets {
@@ -88,7 +88,7 @@ func StepsToReproduce(tickets ...jira.Ticket) (*TTestResult, error) {
 }
 
 // Stacktraces performs Welch's T Test on stack traces presence or not for all tickets.
-func Stacktraces(tickets ...jira.Ticket) (*TTestResult, error) {
+func Stacktraces(tickets ...jira.JiraIssue) (*TTestResult, error) {
 	var withTimes stats
 	var withoutTimes stats
 	for _, t := range tickets {
@@ -108,7 +108,7 @@ func Stacktraces(tickets ...jira.Ticket) (*TTestResult, error) {
 }
 
 // CommentsComplexity performs Spearman R's test on the complexity of comments and times-to-close.
-func CommentsComplexity(tickets ...jira.Ticket) *SpearmanResult {
+func CommentsComplexity(tickets ...jira.JiraIssue) *SpearmanResult {
 	var comms stats
 	var times stats
 	for _, t := range tickets {
@@ -126,7 +126,7 @@ func CommentsComplexity(tickets ...jira.Ticket) *SpearmanResult {
 }
 
 // FieldsComplexity performs Spearman R's test on the complexity of summary&description and times-to-close.
-func FieldsComplexity(tickets ...jira.Ticket) *SpearmanResult {
+func FieldsComplexity(tickets ...jira.JiraIssue) *SpearmanResult {
 	var fields stats
 	var times stats
 	for _, t := range tickets {
@@ -144,7 +144,7 @@ func FieldsComplexity(tickets ...jira.Ticket) *SpearmanResult {
 }
 
 // Sentiment performs Spearman R's test on sentiment scores and times-to-close.
-func Sentiment(tickets ...jira.Ticket) *SpearmanResult {
+func Sentiment(tickets ...jira.JiraIssue) *SpearmanResult {
 	var scores stats
 	var times stats
 	for _, t := range tickets {
@@ -161,7 +161,7 @@ func Sentiment(tickets ...jira.Ticket) *SpearmanResult {
 }
 
 // Grammar performs Spearman R's test on grammar correctness scores and times-to-close.
-func Grammar(tickets ...jira.Ticket) *SpearmanResult {
+func Grammar(tickets ...jira.JiraIssue) *SpearmanResult {
 	var scores stats
 	var times stats
 	for _, t := range tickets {
