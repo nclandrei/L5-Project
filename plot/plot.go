@@ -13,10 +13,10 @@ const (
 )
 
 // Plot defines a standard analysis plotting function.
-type Plot func(...jira.Ticket) error
+type Plot func(...jira.JiraIssue) error
 
 // Attachments draws a stacked barchart for attachments analysis.
-func Attachments(tickets ...jira.Ticket) error {
+func Attachments(tickets ...jira.JiraIssue) error {
 	result := make(map[string]float64)
 	var withoutCount int
 	var withoutTime float64
@@ -86,7 +86,7 @@ func Attachments(tickets ...jira.Ticket) error {
 }
 
 // StepsToReproduce produces a barchart for presence of steps to reproduce in tickets.
-func StepsToReproduce(tickets ...jira.Ticket) error {
+func StepsToReproduce(tickets ...jira.JiraIssue) error {
 	var withCount, withoutCount int
 	var withSum, withoutSum float64
 	for _, ticket := range tickets {
@@ -120,7 +120,7 @@ func StepsToReproduce(tickets ...jira.Ticket) error {
 }
 
 // Stacktraces produces a barchart for presence of stacktraces in tickets.
-func Stacktraces(tickets ...jira.Ticket) error {
+func Stacktraces(tickets ...jira.JiraIssue) error {
 	var withCount, withoutCount int
 	var withSum, withoutSum float64
 	for _, ticket := range tickets {
@@ -154,7 +154,7 @@ func Stacktraces(tickets ...jira.Ticket) error {
 }
 
 // CommentsComplexity produces a scatter plot with trendline for comments complexity analysis.
-func CommentsComplexity(tickets ...jira.Ticket) error {
+func CommentsComplexity(tickets ...jira.JiraIssue) error {
 	var comms []float64
 	var times []float64
 	for _, ticket := range tickets {
@@ -183,7 +183,7 @@ func CommentsComplexity(tickets ...jira.Ticket) error {
 }
 
 // FieldsComplexity produces a scatter plot with trendline for fields (i.e. summary and description) complexity analysis.
-func FieldsComplexity(tickets ...jira.Ticket) error {
+func FieldsComplexity(tickets ...jira.JiraIssue) error {
 	var fields []float64
 	var times []float64
 	for _, ticket := range tickets {
@@ -213,7 +213,7 @@ func FieldsComplexity(tickets ...jira.Ticket) error {
 }
 
 // GrammarCorrectness produces a scatter plot with trendline for grammar correctness scores analysis.
-func GrammarCorrectness(tickets ...jira.Ticket) error {
+func GrammarCorrectness(tickets ...jira.JiraIssue) error {
 	var scores []float64
 	var times []float64
 	for _, ticket := range tickets {
@@ -243,7 +243,7 @@ func GrammarCorrectness(tickets ...jira.Ticket) error {
 }
 
 // SentimentAnalysis produces a scatter plot with trendline for sentiment scores analysis.
-func SentimentAnalysis(tickets ...jira.Ticket) error {
+func SentimentAnalysis(tickets ...jira.JiraIssue) error {
 	var scores []float64
 	var times []float64
 	for _, ticket := range tickets {
