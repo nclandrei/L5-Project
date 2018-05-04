@@ -11,10 +11,10 @@ import (
 
 // TicketAnalysis defines a function that analyzes a variadic number of tickets and updates
 // their metrics fields accordingly.
-type TicketAnalysis func(...jira.Ticket)
+type TicketAnalysis func(...jira.JiraIssue)
 
 // TimesToClose returns how much time it took to close a variadic number of tickets.
-func TimesToClose(tickets ...jira.Ticket) {
+func TimesToClose(tickets ...jira.JiraIssue) {
 	var count int
 	for i := range tickets {
 		if !isTicketHighPriority(tickets[i]) || tickets[i].Fields.Status.Name == "Open" {
@@ -43,7 +43,7 @@ func TimesToClose(tickets ...jira.Ticket) {
 }
 
 // FieldsComplexity counts the number of words in summary and description for a variadic number of tickets.
-func FieldsComplexity(tickets ...jira.Ticket) {
+func FieldsComplexity(tickets ...jira.JiraIssue) {
 	for i := range tickets {
 		if isTicketHighPriority(tickets[i]) {
 			tickets[i].SummaryDescWordsCount = calculateNumberOfWords(tickets[i].Fields.Description) +
@@ -53,7 +53,7 @@ func FieldsComplexity(tickets ...jira.Ticket) {
 }
 
 // CommentsComplexity counts the number of words in all comments for a variadic number of tickets.
-func CommentsComplexity(tickets ...jira.Ticket) {
+func CommentsComplexity(tickets ...jira.JiraIssue) {
 	for i := range tickets {
 		if isTicketHighPriority(tickets[i]) {
 			tickets[i].CommentWordsCount = calculateNumberOfWords(concatComments(tickets[i]))
@@ -62,7 +62,7 @@ func CommentsComplexity(tickets ...jira.Ticket) {
 }
 
 // Attachments takes a variadic number of tickets and checks if they have attachments and what type they are.
-func Attachments(tickets ...jira.Ticket) {
+func Attachments(tickets ...jira.JiraIssue) {
 	for i := range tickets {
 		if isTicketHighPriority(tickets[i]) {
 			for j := range tickets[i].Fields.Attachments {
@@ -103,7 +103,7 @@ func fileExtension(f string) string {
 
 // StepsToReproduce returns whether a variadic number of tickets have steps to reproduce or not inside
 // summary, description or any of the comments.
-func StepsToReproduce(tickets ...jira.Ticket) {
+func StepsToReproduce(tickets ...jira.JiraIssue) {
 	expr := `(\n(\s*)\*(.*)){2,}`
 	for i := range tickets {
 		if !isTicketHighPriority(tickets[i]) {
@@ -129,7 +129,7 @@ func StepsToReproduce(tickets ...jira.Ticket) {
 
 // StackTraces checks whether a variadic number of tickets have stack traces attached either
 // inside the description or any of the comments.
-func StackTraces(tickets ...jira.Ticket) {
+func StackTraces(tickets ...jira.JiraIssue) {
 	expr := `^.+Exception[^\n]+\n(\s*at.+\s*\n)+`
 	for i := range tickets {
 		if !isTicketHighPriority(tickets[i]) {
@@ -187,7 +187,7 @@ func concatAndRemoveNewlines(strs ...string) (string, error) {
 }
 
 // concatComments returns a string containing all the comment bodies concatenated.
-func concatComments(ticket jira.Ticket) string {
+func concatComments(ticket jira.JiraIssue) string {
 	var builder strings.Builder
 	for _, comment := range ticket.Fields.Comments.Comments {
 		builder.WriteString(comment.Body)
@@ -201,7 +201,7 @@ func calculateTimeDifference(t1, t2 jira.Time) float64 {
 }
 
 // isTicketHighPriority checks whether a ticket is high priority.
-func isTicketHighPriority(ticket jira.Ticket) bool {
+func isTicketHighPriority(ticket jira.JiraIssue) bool {
 	return ticket.Fields.Priority.ID == "1" || ticket.Fields.Priority.ID == "2" ||
 		ticket.Fields.Priority.ID == "3" || ticket.Fields.Priority.ID == "4"
 }
