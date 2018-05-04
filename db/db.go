@@ -16,9 +16,9 @@ const (
 
 // TicketStorage defines a generic interface for different DBs to implement.
 type TicketStorage interface {
-	Tickets() ([]jira.Ticket, error)
-	Insert(...jira.Ticket) error
-	Slice(int, int) ([]jira.Ticket, error)
+	Tickets() ([]jira.JiraIssue, error)
+	Insert(...jira.JiraIssue) error
+	Slice(int, int) ([]jira.JiraIssue, error)
 	Size() (int, error)
 }
 
@@ -49,7 +49,7 @@ func NewBolt(path string) (*Bolt, error) {
 }
 
 // Insert takes a slice of tickets and inserts them into Bolt.
-func (db *Bolt) Insert(tickets ...jira.Ticket) error {
+func (db *Bolt) Insert(tickets ...jira.JiraIssue) error {
 	for _, ticket := range tickets {
 		tx, err := db.Begin(true)
 		if err != nil {
@@ -72,7 +72,7 @@ func (db *Bolt) Insert(tickets ...jira.Ticket) error {
 }
 
 // TicketByKey returns a single ticket searched for by key.
-func (db *Bolt) TicketByKey(key string) (*jira.Ticket, error) {
+func (db *Bolt) TicketByKey(key string) (*jira.JiraIssue, error) {
 	tx, err := db.Begin(false)
 	if err != nil {
 		return nil, err
@@ -82,7 +82,7 @@ func (db *Bolt) TicketByKey(key string) (*jira.Ticket, error) {
 	if b == nil {
 		return nil, fmt.Errorf("could not retrieve users bucket from bolt")
 	}
-	var ticket *jira.Ticket
+	var ticket *jira.JiraIssue
 	bTicket := b.Get([]byte(key))
 	if bTicket == nil {
 		return nil, nil
@@ -95,8 +95,8 @@ func (db *Bolt) TicketByKey(key string) (*jira.Ticket, error) {
 }
 
 // Tickets retrieves all the tickets from inside the database.
-func (db *Bolt) Tickets() ([]jira.Ticket, error) {
-	var tickets []jira.Ticket
+func (db *Bolt) Tickets() ([]jira.JiraIssue, error) {
+	var tickets []jira.JiraIssue
 	tx, err := db.Begin(false)
 	if err != nil {
 		return nil, err
@@ -107,7 +107,7 @@ func (db *Bolt) Tickets() ([]jira.Ticket, error) {
 		return nil, fmt.Errorf("could not retrieve users bucket from bolt")
 	}
 	err = b.ForEach(func(k, v []byte) error {
-		var ticket jira.Ticket
+		var ticket jira.JiraIssue
 		err := json.Unmarshal(v, &ticket)
 		if err == nil {
 			tickets = append(tickets, ticket)
@@ -118,7 +118,7 @@ func (db *Bolt) Tickets() ([]jira.Ticket, error) {
 }
 
 // Slice returns a ticket slice given a low and high bound.
-func (db *Bolt) Slice(l, h int) ([]jira.Ticket, error) {
+func (db *Bolt) Slice(l, h int) ([]jira.JiraIssue, error) {
 	if l >= h {
 		return nil, fmt.Errorf("low bound is greater than high bound")
 	}
@@ -132,7 +132,7 @@ func (db *Bolt) Slice(l, h int) ([]jira.Ticket, error) {
 	if l > size || h > size {
 		return nil, fmt.Errorf("bounds greater than bucket size")
 	}
-	tickets := make([]jira.Ticket, h-l)
+	tickets := make([]jira.JiraIssue, h-l)
 	err = db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(bucketName))
 		cursor := b.Cursor()
@@ -143,7 +143,7 @@ func (db *Bolt) Slice(l, h int) ([]jira.Ticket, error) {
 			i++
 		}
 		for i < h {
-			var ticket jira.Ticket
+			var ticket jira.JiraIssue
 			err := json.Unmarshal(v, &ticket)
 			if err != nil {
 				return err
